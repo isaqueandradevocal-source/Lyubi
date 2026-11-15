@@ -237,6 +237,7 @@ button.danger:hover:not(:disabled) { background: #ffe1e1; box-shadow: none; }
 #nextTask strong { color: white; font-weight: normal; }
 .exec-buttons { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
 .exec-buttons button { padding: 14px 20px; font-size: 15px; }
+ .exec-buttons button { min-width: 130px; }
 #status { color: #d1d3d6; margin: 18px 0; min-height: 20px; }
 #recordStatus { font-size: 12px; color: #e5bd69; margin-top: 12px; }
 #exitFullscreen { position: absolute; top: 14px; right: 14px; background: var(--mt-grafite-card); color: white; padding: 10px 13px; border: 1px solid #77797e; box-shadow: none; }
@@ -374,7 +375,7 @@ header,.home-intro{background:#424448;box-shadow:none}
    <h2>Histórico de tarefas concluídas</h2>
    <p class="note">Aqui aparecem somente as tarefas que você escolheu registrar e concluiu até o fim.</p>
    <div class="history-summary">
-    <div class="history-stat"><small>Tarefas concluídas</small><strong id="historyCount">0</strong></div>
+    <div class="history-stat"><small>Atividades registradas</small><strong id="historyCount">0</strong></div>
     <div class="history-stat"><small>Tempo realizado</small><strong id="historyTotalTime">0 min</strong></div>
    </div>
    <div id="historyList"></div>
@@ -610,7 +611,7 @@ const breakMessages=[
  "Lembre-se do propósito por trás do que está fazendo."
 ];
 
-const statusLabels={"concluída":"Concluída","pulada":"Pulada","encerrada":"Encerrada"};
+const statusLabels={"concluída":"Concluída","pulada":"Pulada","encerrada":"Encerrada","parcial":"Realizada parcialmente","interrompida":"Interrompida"};
 const chartColors=["#4f8ff7","#65c58a","#f28b54","#f4c95d","#ae91ed","#ee8bb5","#48b8b0","#8795a8"];
 
 function updateActivitySuggestions(){
@@ -630,7 +631,61 @@ function updateActivitySuggestions(){
 }
 
 function saveTasks(){localStorage.setItem("meuTempoTasks",JSON.stringify(tasks));}
+
 function saveHistory(){localStorage.setItem("meuTempoHistory",JSON.stringify(historyEntries));}
+
+/* Pergunta se uma tarefa interrompida/parcial deve entrar no Histórico.
+   O tempo real já é salvo separadamente no painel de tempo. */
+function askToRecordInterruption(task,actualSeconds,endedAt){
+ if(!task||actualSeconds<=0)return;
+ if(!confirm("Você encerrou “"+task.name+"” antes do tempo previsto.\n\nDeseja registrar essa atividade no Histórico?"))return;
+
+ const typeAnswer=prompt(
+  "Como deseja classificar esta atividade?\n\n1 - Realizada parcialmente\n2 - Interrompida\n\nDigite 1 ou 2:",
+  "2"
+ );
+ if(typeAnswer===null)return;
+ const type=typeAnswer.trim()==="1"?"parcial":typeAnswer.trim()==="2"?"interrompida":null;
+ if(!type){alert("Opção inválida. A atividade não foi adicionada ao Histórico.");return;}
+
+ const reasonAnswer=prompt(
+  "Qual foi o motivo? (opcional)\n\n1 - Aconteceu algo inesperado\n2 - Precisou atender a família\n3 - Distração com outra atividade\n4 - Cansaço ou falta de disposição\n5 - Decidiu deixar para depois\n6 - Outro motivo\n\nDigite o número correspondente. Deixe em branco se não quiser informar."
+ );
+ if(reasonAnswer===null){
+  // O motivo é opcional; cancelar esta pergunta não cancela o registro.
+ }
+ let reason="";
+ if(reasonAnswer!==null&&reasonAnswer.trim()!==""){
+  const reasons={
+   "1":"Aconteceu algo inesperado",
+   "2":"Precisou atender a família",
+   "3":"Distração com outra atividade",
+   "4":"Cansaço ou falta de disposição",
+   "5":"Decidiu deixar para depois"
+  };
+  const choice=reasonAnswer.trim();
+  if(reasons[choice])reason=reasons[choice];
+  else if(choice==="6"){
+   const custom=prompt("Qual foi o outro motivo? (opcional)");
+   reason=custom?custom.trim():"";
+  }else{
+   reason=choice;
+  }
+ }
+
+ historyEntries.push({
+  id:String(Date.now())+"-"+Math.random().toString(36).slice(2,8),
+  name:task.name,
+  category:task.category||"",
+  actualSeconds:actualSeconds,
+  status:type,
+  reason:reason,
+  completedAt:(endedAt||new Date()).toISOString()
+ });
+ saveHistory();
+ renderHistory();
+}
+
 
 function showPage(page){
   // Compatibilidade com chamadas antigas à aba histórica.
@@ -842,11 +897,19 @@ function renderHistory(){
    const title=document.createElement("div");title.className="history-entry-title";title.textContent=entry.name||"Atividade";
    const meta=document.createElement("div");meta.className="history-meta";
    const time=new Date(entry.completedAt).toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"});
-   meta.textContent=(entry.category?entry.category+" · ":"")+"Concluída às "+time;
+   const status=entry.status||"concluída";
+   const statusText=statusLabels[status]||"Concluída";
+   meta.textContent=(entry.category?entry.category+" · ":"")+statusText+" às "+time;
    const times=document.createElement("div");times.className="history-times";
-   const planned=document.createElement("span");planned.textContent="Planejado: "+formatDuration(Number(entry.plannedSeconds)||0,true);
-   const actual=document.createElement("span");actual.textContent="Realizado: "+formatDuration(Number(entry.actualSeconds)||0,true);
-   times.append(planned,actual);card.append(title,meta,times);list.appendChild(card);
+   const actual=document.createElement("span");actual.textContent="Tempo realizado: "+formatDuration(Number(entry.actualSeconds)||0,true);
+   times.appendChild(actual);
+   card.append(title,meta,times);
+   if(entry.reason){
+    const reason=document.createElement("div");reason.className="history-meta";
+    reason.textContent="Motivo: "+entry.reason;
+    card.appendChild(reason);
+   }
+   list.appendChild(card);
   });
  });
 }
@@ -908,11 +971,14 @@ function recordCompletedTask(){
    id:String(Date.now())+"-"+String(Math.random()).slice(2,8),
    name:task.name,category:task.category||"",
    plannedSeconds,actualSeconds,
+   status:"concluída",
+   reason:"",
    completedAt:new Date().toISOString()
   });
   saveHistory();
  }
  renderHome();
+ renderHistory();
 }
 
 function renderTasks(){
@@ -1221,11 +1287,25 @@ function togglePause(){
   $("pauseButton").textContent="Pausar";$("status").textContent="Continue no seu ritmo.";updateRealClock();
  }
 }
+function completeCurrentTaskEarly(){
+ if(!running||inBreak||!taskStartedAt)return;
+ if(!confirm("Marcar “"+tasks[currentIndex].name+"” como concluída agora?"))return;
+ clearInterval(timer);
+ recordCompletedTask();
+ if(currentIndex<tasks.length-1)playSound();
+ startBreak();
+}
 function skipStep(){
  if(!running)return;
  clearInterval(timer);
  if(inBreak)startTask();
- else{saveCurrentTaskTime("pulada");startBreak();}
+ else{
+  const task=tasks[currentIndex];
+  const endedAt=new Date();
+  const actualSeconds=saveCurrentTaskTime("pulada");
+  askToRecordInterruption(task,actualSeconds,endedAt);
+  startBreak();
+ }
 }
 function playSound(){
  try{
@@ -1272,7 +1352,12 @@ async function toggleRecording(){
 }
 function finishProgram(completed=false){
  clearInterval(timer);timer=null;
- if(running&&!inBreak&&taskStartedAt)saveCurrentTaskTime("encerrada");
+ if(running&&!inBreak&&taskStartedAt){
+  const task=tasks[currentIndex];
+  const endedAt=new Date();
+  const actualSeconds=saveCurrentTaskTime("encerrada");
+  askToRecordInterruption(task,actualSeconds,endedAt);
+ }
  running=false;paused=false;taskActiveStartedAt=0;taskElapsedMs=0;taskStartedAt=0;
  if(mediaRecorder&&mediaRecorder.state==="recording")mediaRecorder.stop();
  else if(recordingStream){recordingStream.getTracks().forEach(track=>track.stop());recordingStream=null;}
