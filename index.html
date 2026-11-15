@@ -237,7 +237,6 @@ button.danger:hover:not(:disabled) { background: #ffe1e1; box-shadow: none; }
 #nextTask strong { color: white; font-weight: normal; }
 .exec-buttons { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
 .exec-buttons button { padding: 14px 20px; font-size: 15px; }
- .exec-buttons button { min-width: 130px; }
 #status { color: #d1d3d6; margin: 18px 0; min-height: 20px; }
 #recordStatus { font-size: 12px; color: #e5bd69; margin-top: 12px; }
 #exitFullscreen { position: absolute; top: 14px; right: 14px; background: var(--mt-grafite-card); color: white; padding: 10px 13px; border: 1px solid #77797e; box-shadow: none; }
@@ -370,17 +369,24 @@ header,.home-intro{background:#424448;box-shadow:none}
  <main>
   <section class="home-intro">
    <h2>Histórico</h2>
-   <p>Seu tempo investido, as atividades concluídas e sua evolução.</p>
+   <p>Acompanhe o tempo realizado e consulte os detalhes quando precisar.</p>
   </section><section class="panel">
-   <h2>Histórico de tarefas concluídas</h2>
-   <p class="note">Aqui aparecem somente as tarefas que você escolheu registrar e concluiu até o fim.</p>
+   <h2>Resumo da semana</h2>
+   <p class="note">Veja primeiro como você utilizou seu tempo. Os registros individuais ficam guardados abaixo.</p>
    <div class="history-summary">
     <div class="history-stat"><small>Atividades registradas</small><strong id="historyCount">0</strong></div>
     <div class="history-stat"><small>Tempo realizado</small><strong id="historyTotalTime">0 min</strong></div>
    </div>
-   <div id="historyList"></div>
-   <p id="historyEmpty" class="history-empty">Ainda não há tarefas registradas. Ao adicionar uma atividade, escolha “Sim” em “Registrar no histórico?” para acompanhá-la aqui.</p>
+   <p class="note" id="historyWeekRange" style="margin-top:10px">Esta semana</p>
   </section>
+  <details class="panel" id="historyDetails">
+   <summary style="cursor:pointer;font-weight:700">Ver atividades registradas</summary>
+   <div id="historyList" style="margin-top:16px"></div>
+   <p id="historyEmpty" class="history-empty">Ainda não há atividades registradas. Ao adicionar uma atividade, escolha “Sim” em “Registrar no histórico?” para acompanhá-la aqui.</p>
+  </details>
+  <details class="panel" id="historyAnalysis">
+   <summary style="cursor:pointer;font-weight:700">Análises e registros de tempo</summary>
+   <div style="margin-top:16px">
   <section class="panel">
    <h2>Visão geral</h2>
    <label class="field-label" for="dashboardMonth">Período de análise</label>
@@ -419,6 +425,8 @@ header,.home-intro{background:#424448;box-shadow:none}
    <p id="timeEntriesEmpty" class="dash-empty">Ainda não há atividades registradas neste período. Inicie uma tarefa pelo cronômetro ou adicione um registro manual.</p>
   </section>
   
+  </div>
+  </details>
   <section class="panel" style="display:none">
    <h2>Resumo de hoje</h2>
    <div class="home-stats">
@@ -611,7 +619,7 @@ const breakMessages=[
  "Lembre-se do propósito por trás do que está fazendo."
 ];
 
-const statusLabels={"concluída":"Concluída","pulada":"Pulada","encerrada":"Encerrada","parcial":"Realizada parcialmente","interrompida":"Interrompida"};
+const statusLabels={"concluída":"Concluída","pulada":"Pulada","encerrada":"Encerrada"};
 const chartColors=["#4f8ff7","#65c58a","#f28b54","#f4c95d","#ae91ed","#ee8bb5","#48b8b0","#8795a8"];
 
 function updateActivitySuggestions(){
@@ -631,61 +639,7 @@ function updateActivitySuggestions(){
 }
 
 function saveTasks(){localStorage.setItem("meuTempoTasks",JSON.stringify(tasks));}
-
 function saveHistory(){localStorage.setItem("meuTempoHistory",JSON.stringify(historyEntries));}
-
-/* Pergunta se uma tarefa interrompida/parcial deve entrar no Histórico.
-   O tempo real já é salvo separadamente no painel de tempo. */
-function askToRecordInterruption(task,actualSeconds,endedAt){
- if(!task||actualSeconds<=0)return;
- if(!confirm("Você encerrou “"+task.name+"” antes do tempo previsto.\n\nDeseja registrar essa atividade no Histórico?"))return;
-
- const typeAnswer=prompt(
-  "Como deseja classificar esta atividade?\n\n1 - Realizada parcialmente\n2 - Interrompida\n\nDigite 1 ou 2:",
-  "2"
- );
- if(typeAnswer===null)return;
- const type=typeAnswer.trim()==="1"?"parcial":typeAnswer.trim()==="2"?"interrompida":null;
- if(!type){alert("Opção inválida. A atividade não foi adicionada ao Histórico.");return;}
-
- const reasonAnswer=prompt(
-  "Qual foi o motivo? (opcional)\n\n1 - Aconteceu algo inesperado\n2 - Precisou atender a família\n3 - Distração com outra atividade\n4 - Cansaço ou falta de disposição\n5 - Decidiu deixar para depois\n6 - Outro motivo\n\nDigite o número correspondente. Deixe em branco se não quiser informar."
- );
- if(reasonAnswer===null){
-  // O motivo é opcional; cancelar esta pergunta não cancela o registro.
- }
- let reason="";
- if(reasonAnswer!==null&&reasonAnswer.trim()!==""){
-  const reasons={
-   "1":"Aconteceu algo inesperado",
-   "2":"Precisou atender a família",
-   "3":"Distração com outra atividade",
-   "4":"Cansaço ou falta de disposição",
-   "5":"Decidiu deixar para depois"
-  };
-  const choice=reasonAnswer.trim();
-  if(reasons[choice])reason=reasons[choice];
-  else if(choice==="6"){
-   const custom=prompt("Qual foi o outro motivo? (opcional)");
-   reason=custom?custom.trim():"";
-  }else{
-   reason=choice;
-  }
- }
-
- historyEntries.push({
-  id:String(Date.now())+"-"+Math.random().toString(36).slice(2,8),
-  name:task.name,
-  category:task.category||"",
-  actualSeconds:actualSeconds,
-  status:type,
-  reason:reason,
-  completedAt:(endedAt||new Date()).toISOString()
- });
- saveHistory();
- renderHistory();
-}
-
 
 function showPage(page){
   // Compatibilidade com chamadas antigas à aba histórica.
@@ -876,40 +830,33 @@ function localDateKey(date){
 function renderHistory(){
  const list=$("historyList");list.innerHTML="";
  const sorted=[...historyEntries].sort((a,b)=>new Date(b.completedAt)-new Date(a.completedAt));
- $("historyCount").textContent=sorted.length;
- const totalSeconds=sorted.reduce((sum,item)=>sum+(Number(item.actualSeconds)||0),0);
+ const now=new Date();
+ const today=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+ const monday=new Date(today);monday.setDate(today.getDate()-((today.getDay()+6)%7));
+ const nextMonday=new Date(monday);nextMonday.setDate(monday.getDate()+7);
+ const weekly=sorted.filter(item=>{const d=new Date(item.completedAt);return d>=monday&&d<nextMonday;});
+ $("historyCount").textContent=weekly.length;
+ const totalSeconds=weekly.reduce((sum,item)=>sum+(Number(item.actualSeconds)||0),0);
  $("historyTotalTime").textContent=formatDuration(totalSeconds);
+ const rangeEnd=new Date(nextMonday);rangeEnd.setDate(rangeEnd.getDate()-1);
+ const rangeText=monday.toLocaleDateString("pt-BR",{day:"2-digit",month:"short"})+" a "+rangeEnd.toLocaleDateString("pt-BR",{day:"2-digit",month:"short"});
+ if($("historyWeekRange"))$("historyWeekRange").textContent="Semana de "+rangeText;
  $("historyEmpty").style.display=sorted.length?"none":"block";
  const groups={};
- sorted.forEach(entry=>{
-  const key=localDateKey(new Date(entry.completedAt));
-  if(!groups[key])groups[key]=[];
-  groups[key].push(entry);
- });
+ sorted.forEach(entry=>{const key=localDateKey(new Date(entry.completedAt));if(!groups[key])groups[key]=[];groups[key].push(entry);});
  Object.keys(groups).sort((a,b)=>b.localeCompare(a)).forEach(key=>{
   const date=new Date(key+"T12:00:00");
-  const heading=document.createElement("h3");
-  heading.className="history-date";
-  heading.textContent=date.toLocaleDateString("pt-BR",{weekday:"long",day:"2-digit",month:"long",year:"numeric"});
-  list.appendChild(heading);
+  const heading=document.createElement("h3");heading.className="history-date";
+  heading.textContent=date.toLocaleDateString("pt-BR",{weekday:"long",day:"2-digit",month:"long",year:"numeric"});list.appendChild(heading);
   groups[key].forEach(entry=>{
    const card=document.createElement("article");card.className="history-entry";
    const title=document.createElement("div");title.className="history-entry-title";title.textContent=entry.name||"Atividade";
    const meta=document.createElement("div");meta.className="history-meta";
    const time=new Date(entry.completedAt).toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"});
-   const status=entry.status||"concluída";
-   const statusText=statusLabels[status]||"Concluída";
-   meta.textContent=(entry.category?entry.category+" · ":"")+statusText+" às "+time;
-   const times=document.createElement("div");times.className="history-times";
-   const actual=document.createElement("span");actual.textContent="Tempo realizado: "+formatDuration(Number(entry.actualSeconds)||0,true);
-   times.appendChild(actual);
-   card.append(title,meta,times);
-   if(entry.reason){
-    const reason=document.createElement("div");reason.className="history-meta";
-    reason.textContent="Motivo: "+entry.reason;
-    card.appendChild(reason);
-   }
-   list.appendChild(card);
+   meta.textContent=(entry.category?entry.category+" · ":"")+"Registrada às "+time;
+   const actual=document.createElement("div");actual.className="history-times";
+   actual.textContent="Tempo realizado: "+formatDuration(Number(entry.actualSeconds)||0,true);
+   card.append(title,meta,actual);list.appendChild(card);
   });
  });
 }
@@ -971,14 +918,11 @@ function recordCompletedTask(){
    id:String(Date.now())+"-"+String(Math.random()).slice(2,8),
    name:task.name,category:task.category||"",
    plannedSeconds,actualSeconds,
-   status:"concluída",
-   reason:"",
    completedAt:new Date().toISOString()
   });
   saveHistory();
  }
  renderHome();
- renderHistory();
 }
 
 function renderTasks(){
@@ -1287,25 +1231,11 @@ function togglePause(){
   $("pauseButton").textContent="Pausar";$("status").textContent="Continue no seu ritmo.";updateRealClock();
  }
 }
-function completeCurrentTaskEarly(){
- if(!running||inBreak||!taskStartedAt)return;
- if(!confirm("Marcar “"+tasks[currentIndex].name+"” como concluída agora?"))return;
- clearInterval(timer);
- recordCompletedTask();
- if(currentIndex<tasks.length-1)playSound();
- startBreak();
-}
 function skipStep(){
  if(!running)return;
  clearInterval(timer);
  if(inBreak)startTask();
- else{
-  const task=tasks[currentIndex];
-  const endedAt=new Date();
-  const actualSeconds=saveCurrentTaskTime("pulada");
-  askToRecordInterruption(task,actualSeconds,endedAt);
-  startBreak();
- }
+ else{saveCurrentTaskTime("pulada");startBreak();}
 }
 function playSound(){
  try{
@@ -1352,12 +1282,7 @@ async function toggleRecording(){
 }
 function finishProgram(completed=false){
  clearInterval(timer);timer=null;
- if(running&&!inBreak&&taskStartedAt){
-  const task=tasks[currentIndex];
-  const endedAt=new Date();
-  const actualSeconds=saveCurrentTaskTime("encerrada");
-  askToRecordInterruption(task,actualSeconds,endedAt);
- }
+ if(running&&!inBreak&&taskStartedAt)saveCurrentTaskTime("encerrada");
  running=false;paused=false;taskActiveStartedAt=0;taskElapsedMs=0;taskStartedAt=0;
  if(mediaRecorder&&mediaRecorder.state==="recording")mediaRecorder.stop();
  else if(recordingStream){recordingStream.getTracks().forEach(track=>track.stop());recordingStream=null;}
