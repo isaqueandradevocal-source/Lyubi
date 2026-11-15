@@ -355,6 +355,27 @@ header,.home-intro{background:#424448;box-shadow:none}
 #realBox,#breakMessage{background:#595b5f;border-color:#77797e;color:#ffffff}
 #clock,#realBox strong{color:#ffffff}
 @media(max-width:600px){.page-nav{grid-template-columns:repeat(2,minmax(0,1fr))}.page-nav #plannerTab::before{content:"⌂"}.page-nav #homeTab::before{content:"◷"}#plannerPage .planner-form{grid-template-columns:minmax(0,1fr) 88px}#plannerPage .planner-form .planner-name{grid-column:1}#plannerPage .planner-form .field:has(#taskMinutes){grid-column:2}}
+
+/* Lista compacta e controles por ícones */
+#plannerPage #taskList .task{
+ display:flex;align-items:center;gap:6px;padding:6px 7px;margin:0 0 5px;
+ min-height:38px;border-radius:8px;border:1px solid #707278;
+ cursor:grab;touch-action:pan-y;transition:background .12s,opacity .12s;
+}
+#plannerPage #taskList .task:active{cursor:grabbing}
+#plannerPage #taskList .task.dragging{opacity:.42;border:1px dashed #d5d7da}
+#plannerPage #taskList .task.drag-over{outline:2px solid #aeb8c0;outline-offset:1px}
+#plannerPage #taskList .taskname{font-size:13px;line-height:1.25;font-weight:550}
+#plannerPage #taskList .task small{font-size:10px;line-height:1.2}
+#plannerPage #taskList .task button.task-icon{
+ width:27px;height:27px;min-width:27px;padding:5px;margin:0;border-radius:7px;
+ display:inline-flex;align-items:center;justify-content:center;box-shadow:none;
+}
+#plannerPage #taskList .task button.task-icon svg{width:14px;height:14px;display:block}
+#plannerPage #taskList .task button.task-edit{background:#e9eaed;color:#34363a}
+#plannerPage #taskList .task button.task-delete{background:#fff0f0;color:#991b1b}
+#plannerPage #taskList .task button.task-icon:hover{filter:brightness(.94);transform:none}
+#plannerPage #taskList .task .task-real{font-size:9px}
 </style>
 </head>
 <body>
@@ -926,23 +947,58 @@ function recordCompletedTask(){
 }
 
 function renderTasks(){
- $("taskList").innerHTML="";
+ const list=$("taskList");
+ list.innerHTML="";
  $("emptyMessage").style.display=tasks.length?"none":"block";
+ let draggedIndex=-1;
+ let touchDragTimer=null;
+ let touchDragStarted=false;
  tasks.forEach((task,index)=>{
-  const item=document.createElement("div");item.className="task";
+  const item=document.createElement("div");item.className="task";item.draggable=true;item.dataset.index=String(index);
   const name=document.createElement("div");name.className="taskname";name.textContent=task.name;
   const duration=document.createElement("small");duration.textContent=task.minutes+" min";
-  const up=document.createElement("button");up.className="secondary";up.textContent="↑";up.title="Mover para cima";up.disabled=index===0;up.onclick=()=>moveTask(index,-1);
-  const down=document.createElement("button");down.className="secondary";down.textContent="↓";down.title="Mover para baixo";down.disabled=index===tasks.length-1;down.onclick=()=>moveTask(index,1);
-  const edit=document.createElement("button");edit.className="secondary";edit.textContent="Editar";edit.onclick=()=>editTask(index);
-  const del=document.createElement("button");del.className="danger";del.textContent="Excluir";del.onclick=()=>deleteTask(index);
+  const edit=document.createElement("button");edit.type="button";edit.className="task-icon task-edit";edit.title="Editar";edit.setAttribute("aria-label","Editar atividade");
+  edit.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z"/></svg>';
+  edit.onclick=e=>{e.stopPropagation();editTask(index)};
+  const del=document.createElement("button");del.type="button";del.className="task-icon task-delete";del.title="Excluir";del.setAttribute("aria-label","Excluir atividade");
+  del.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="m19 6-1 14H6L5 6"/><path d="M10 11v5M14 11v5"/></svg>';
+  del.onclick=e=>{e.stopPropagation();deleteTask(index)};
   item.append(name,duration);
   if(Number(task.lastActualSeconds)>0){
    const real=document.createElement("small");real.className="task-real";
-   real.textContent="Último real: "+formatDuration(Number(task.lastActualSeconds),true);
+   real.textContent="Real: "+formatDuration(Number(task.lastActualSeconds),true);
    item.appendChild(real);
   }
-  item.append(up,down,edit,del);$("taskList").appendChild(item);
+  item.append(edit,del);
+  item.addEventListener("dragstart",e=>{draggedIndex=index;item.classList.add("dragging");e.dataTransfer.effectAllowed="move";e.dataTransfer.setData("text/plain",String(index));});
+  item.addEventListener("dragend",()=>{draggedIndex=-1;list.querySelectorAll(".task").forEach(el=>el.classList.remove("dragging","drag-over"));});
+  item.addEventListener("dragover",e=>{e.preventDefault();if(draggedIndex!==index)item.classList.add("drag-over");});
+  item.addEventListener("dragleave",()=>item.classList.remove("drag-over"));
+  item.addEventListener("drop",e=>{e.preventDefault();item.classList.remove("drag-over");const from=draggedIndex>=0?draggedIndex:Number(e.dataTransfer.getData("text/plain"));if(Number.isInteger(from)&&from>=0&&from<tasks.length&&from!==index){const moved=tasks.splice(from,1)[0];tasks.splice(index,0,moved);saveTasks();renderTasks();renderHome();}});
+  // Toque prolongado permite arrastar a atividade em telas sensíveis ao toque.
+  item.addEventListener("pointerdown",e=>{
+   if(e.pointerType!=="touch"||e.target.closest("button"))return;
+   touchDragStarted=false;
+   const startY=e.clientY;
+   touchDragTimer=setTimeout(()=>{touchDragStarted=true;item.classList.add("dragging");item.dataset.touchDrag="1";},280);
+   item._touchStartY=startY;
+  });
+  item.addEventListener("pointermove",e=>{
+   if(e.pointerType!=="touch")return;
+   if(touchDragTimer&&!touchDragStarted&&Math.abs(e.clientY-(item._touchStartY||e.clientY))>10){clearTimeout(touchDragTimer);touchDragTimer=null;}
+   if(!touchDragStarted)return;
+   e.preventDefault();
+   const target=document.elementFromPoint(e.clientX,e.clientY)?.closest(".task");
+   list.querySelectorAll(".task").forEach(el=>el.classList.toggle("drag-over",el===target&&el!==item));
+  });
+  item.addEventListener("pointerup",e=>{
+   if(e.pointerType!=="touch")return;
+   if(touchDragTimer){clearTimeout(touchDragTimer);touchDragTimer=null;}
+   if(touchDragStarted){const target=document.elementFromPoint(e.clientX,e.clientY)?.closest(".task");const to=target?Number(target.dataset.index):-1;if(to>=0&&to!==index){const moved=tasks.splice(index,1)[0];tasks.splice(to,0,moved);saveTasks();renderTasks();renderHome();}else item.classList.remove("dragging");}
+   touchDragStarted=false;
+  });
+  item.addEventListener("pointercancel",()=>{if(touchDragTimer)clearTimeout(touchDragTimer);touchDragTimer=null;touchDragStarted=false;item.classList.remove("dragging");});
+  list.appendChild(item);
  });
  $("startButton").disabled=!tasks.length||running;
 }
