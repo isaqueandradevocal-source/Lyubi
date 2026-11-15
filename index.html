@@ -376,6 +376,25 @@ header,.home-intro{background:#424448;box-shadow:none}
 #plannerPage #taskList .task button.task-delete{background:#fff0f0;color:#991b1b}
 #plannerPage #taskList .task button.task-icon:hover{filter:brightness(.94);transform:none}
 #plannerPage #taskList .task .task-real{font-size:9px}
+/* Remoção dos títulos de marca e do cabeçalho da tela de programação */
+header h1, header p { display:none !important; }
+#plannerPage .planner-panel > h2 { display:none !important; }
+
+
+/* Navegação inferior: fundo grafite e ícones/textos brancos */
+@media (max-width: 600px) {
+  .page-nav button,
+  .page-nav button:hover:not(:disabled),
+  .page-nav button.active {
+    background: #424448 !important;
+    color: #ffffff !important;
+    border: 1px solid #595b5f !important;
+    box-shadow: none !important;
+  }
+  .page-nav button::before {
+    color: #ffffff !important;
+  }
+}
 </style>
 </head>
 <body>
