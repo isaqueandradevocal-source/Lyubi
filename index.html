@@ -408,6 +408,10 @@ header,.home-intro{background:#424448;box-shadow:none}
    <h2>Ideias</h2>
    <p>Guarde aqui as ideias e tarefas que surgirem. Depois, marque quando colocar em prática ou exclua o que não fizer mais sentido.</p>
   </section>
+  
+  
+  
+
   <section class="panel">
    <h2>Nova tarefa</h2>
    <div class="inbox-add">
@@ -435,15 +439,6 @@ header,.home-intro{background:#424448;box-shadow:none}
   <section class="home-intro">
    <h2>Histórico</h2>
    <p>Seu tempo investido, as atividades concluídas e sua evolução.</p>
-  </section><section class="panel">
-   <h2>Histórico de tarefas concluídas</h2>
-   <p class="note">Aqui ficam registradas automaticamente as atividades da sua programação, incluindo as que foram concluídas, puladas ou interrompidas.</p>
-   <div class="history-summary">
-    <div class="history-stat"><small>Atividades registradas</small><strong id="historyCount">0</strong></div>
-    <div class="history-stat"><small>Tempo realizado</small><strong id="historyTotalTime">0 min</strong></div>
-   </div>
-   <div id="historyList"></div>
-   <p id="historyEmpty" class="history-empty">Ainda não há atividades no histórico. Quando você executar uma atividade da programação, o registro será feito automaticamente.</p>
   </section>
   <section class="panel">
    <h2>Visão geral</h2>
@@ -463,12 +458,6 @@ header,.home-intro{background:#424448;box-shadow:none}
    <label class="field-label" for="weekEvaluation">Minha avaliação da semana</label>
    <textarea id="weekEvaluation" placeholder="O que funcionou? O que me atrapalhou? O que quero melhorar na próxima semana?" style="width:100%;min-height:100px;padding:12px;border:1px solid #c9cbd0;border-radius:11px;font:inherit"></textarea>
   </section>
-  <section class="panel" id="archivedWeeksPanel">
-   <h2>Semanas arquivadas</h2>
-   <p class="note">Consulte avaliações e registros de semanas anteriores. Arquivar não apaga os dados.</p>
-   <div id="archivedWeeksList"></div>
-   <p id="archivedWeeksEmpty" class="dash-empty">Nenhuma semana arquivada ainda.</p>
-  </section>
   <section class="panel">
    <h2>Registrar tempo</h2>
    <p class="note">As atividades feitas pelo cronômetro serão registradas automaticamente, com o tempo real investido, quando você concluir, pular ou encerrar uma tarefa. Use o registro manual apenas para atividades que realizou sem iniciar o cronômetro.</p>
@@ -485,6 +474,25 @@ header,.home-intro{background:#424448;box-shadow:none}
    <h2>Tempo distribuído por atividade</h2>
    <div class="time-chart-wrap"><div class="time-donut" id="timeDonut"><div class="time-donut-label"><strong id="donutTotal">0h</strong><small>no período</small></div></div><div class="category-legend" id="categoryLegend"><p class="note">Seus registros por atividade aparecerão aqui.</p></div></div>
   </section>
+<section class="panel" style="display:none">
+   <h2>Histórico de tarefas concluídas</h2>
+   <p class="note">Aqui ficam registradas automaticamente as atividades da sua programação, incluindo as que foram concluídas, puladas ou interrompidas.</p>
+   <div class="history-summary">
+    <div class="history-stat"><small>Atividades registradas</small><strong id="historyCount">0</strong></div>
+    <div class="history-stat"><small>Tempo realizado</small><strong id="historyTotalTime">0 min</strong></div>
+   </div>
+   <div id="historyList"></div>
+   <p id="historyEmpty" class="history-empty">Ainda não há atividades no histórico. Quando você executar uma atividade da programação, o registro será feito automaticamente.</p>
+  </section>
+  
+  <section class="panel" id="archivedWeeksPanel">
+   <h2>Semanas arquivadas</h2>
+   <p class="note">Consulte avaliações e registros de semanas anteriores. Arquivar não apaga os dados.</p>
+   <div id="archivedWeeksList"></div>
+   <p id="archivedWeeksEmpty" class="dash-empty">Nenhuma semana arquivada ainda.</p>
+  </section>
+  
+  
   <section class="panel">
    <h2>Tempo real por atividade</h2>
    <div class="activity-bars" id="activityBars"></div>
@@ -943,6 +951,20 @@ function completeInboxTask(id){
  if(!item)return;item.done=!item.done;item.completedAt=item.done?new Date().toISOString():null;
  saveInbox();renderInbox();
 }
+function moveInboxTaskToPlanner(id){
+ const item=inboxTasks.find(task=>String(task.id)===String(id));
+ if(!item||item.done)return;
+ if(running){alert("Encerre a programação em andamento antes de adicionar uma nova atividade.");return;}
+ const answer=prompt("Quantos minutos você pretende dedicar a esta atividade?", "10");
+ if(answer===null)return;
+ const minutes=Number(answer);
+ if(!Number.isInteger(minutes)||minutes<1||minutes>600){alert("Informe uma duração entre 1 e 600 minutos.");return;}
+ tasks.push({name:item.name,minutes,category:"",recordHistory:true});
+ inboxTasks=inboxTasks.filter(task=>String(task.id)!==String(id));
+ saveTasks();saveInbox();renderTasks();renderHome();renderInbox();
+ showPage("planner");
+ const list=$("taskList");if(list)list.lastElementChild?.scrollIntoView({behavior:"smooth",block:"nearest"});
+}
 function deleteInboxTask(id){
  if(!confirm("Excluir esta tarefa da caixa de entrada?"))return;
  inboxTasks=inboxTasks.filter(task=>String(task.id)!==String(id));saveInbox();renderInbox();
@@ -960,9 +982,15 @@ function renderInbox(){
   const mark=document.createElement("button");mark.type="button";mark.className="inbox-icon-btn";mark.title=isDone?"Marcar como pendente":"Marcar como feita";mark.setAttribute("aria-label",mark.title);
   mark.innerHTML=isDone?'<svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>':'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m8 12 2.5 2.5L16 9"/></svg>';
   mark.onclick=()=>completeInboxTask(item.id);
+  if(!isDone){
+   const send=document.createElement("button");send.type="button";send.className="inbox-icon-btn";send.title="Adicionar à programação do início";send.setAttribute("aria-label",send.title);
+   send.innerHTML='<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/><path d="M19 5v4h-4"/></svg>';
+   send.onclick=()=>moveInboxTaskToPlanner(item.id);
+   row.append(text,send,mark);
+  }else row.append(text,mark);
   const del=document.createElement("button");del.type="button";del.className="inbox-icon-btn delete";del.title="Excluir tarefa";del.setAttribute("aria-label","Excluir tarefa");
   del.innerHTML='<svg viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M5 7l1 13h12l1-13M9 7V4h6v3"/></svg>';del.onclick=()=>deleteInboxTask(item.id);
-  row.append(text,mark,del);return row;
+  row.append(del);return row;
  };
  open.forEach(item=>pending.appendChild(makeRow(item,false)));
  done.forEach(item=>completed.appendChild(makeRow(item,true)));
