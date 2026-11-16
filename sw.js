@@ -1,7 +1,7 @@
 
 /* MEU TEMPO — SISTEMA OFFLINE ATUALIZADO */
 
-const CACHE_NAME = "meu-tempo-v31";
+const CACHE_NAME = "meu-tempo-v32";
 
 const FILES_TO_CACHE = [
   "./",
