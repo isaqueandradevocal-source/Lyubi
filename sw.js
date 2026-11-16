@@ -1,7 +1,7 @@
 
-/* MEU TEMPO — SISTEMA OFFLINE ATUALIZADO */
+/* LYUBI — SISTEMA OFFLINE */
 
-const CACHE_NAME = "meu-tempo-v32";
+const CACHE_NAME = "lyubi-v33";
 
 const FILES_TO_CACHE = [
   "./",
@@ -24,7 +24,11 @@ self.addEventListener("activate", event => {
     caches.keys().then(keys =>
       Promise.all(
         keys
-          .filter(key => key.startsWith("meu-tempo-") && key !== CACHE_NAME)
+          .filter(key =>
+            (key.startsWith("meu-tempo-") ||
+             key.startsWith("lyubi-")) &&
+            key !== CACHE_NAME
+          )
           .map(key => caches.delete(key))
       )
     ).then(() => self.clients.claim())
