@@ -120,6 +120,11 @@ button.danger:hover:not(:disabled) { background: #ffe1e1; box-shadow: none; }
 .archive-item{border:1px solid var(--mt-line);border-radius:12px;padding:13px;margin:9px 0;background:#fff}
 .archive-item strong{display:block}.archive-item small{color:var(--mt-muted)}
 .archive-detail{margin-top:10px;padding:12px;background:#f5f6f7;border-radius:10px;white-space:pre-wrap}
+.archive-toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:9px}
+.archive-toolbar .archive-view{flex:1;text-align:left}
+.archive-copy{width:42px;height:42px;min-width:42px;display:inline-flex;align-items:center;justify-content:center;padding:0;background:#e9eaed;color:#424448}
+.archive-copy svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.archive-reopen{font-size:12px;padding:10px 12px}
 #weekEvaluation{width:100%;min-height:105px;padding:12px;border:1px solid #c9cbd0;border-radius:11px;font:inherit;resize:vertical}
 @media print{body{background:#fff!important;color:#222!important}header,.page-nav,.no-print,button{display:none!important}main{max-width:none;padding:0}.panel{box-shadow:none;break-inside:avoid;border:0}}
 /* Histórico */
@@ -751,30 +756,104 @@ function getWeekEntries(key){return timeEntries.filter(item=>dateKeyForEntry(ite
 function syncWeekEvaluation(){const key=$("dashboardWeek")?.value||currentWeekKey();const archived=archivedWeeks[key];$("weekEvaluation").value=archived?String(archived.evaluation||""):String(localStorage.getItem("meuTempoWeekEvaluation_"+key)||"");$("weekEvaluation").disabled=!!archived;$("archiveWeekButton").disabled=!!archived;$("archiveWeekButton").textContent=archived?"Semana arquivada":"Salvar e arquivar semana";$ ("weekArchiveStatus").textContent=archived?"Esta semana já está arquivada. Os registros estão preservados abaixo.":"Ao arquivar, os registros saem da semana ativa, mas ficam guardados para consulta.";}
 function clearWeekEvaluation(){
  const key=$("dashboardWeek")?.value||currentWeekKey();
- const hasText=archivedWeeks[key]
-  ? String(archivedWeeks[key].evaluation||"").trim()
-  : String(localStorage.getItem("meuTempoWeekEvaluation_"+key)||"").trim();
+ const archived=archivedWeeks[key];
+ const hasText=archived?String(archived.evaluation||"").trim():String(localStorage.getItem("meuTempoWeekEvaluation_"+key)||"").trim();
  if(!hasText){$("weekEvaluation").value="";alert("Não há avaliação salva para esta semana.");return;}
- if(!confirm("Deseja apagar definitivamente a avaliação desta semana?"))return;
- if(archivedWeeks[key]){
-  archivedWeeks[key].evaluation="";
-  saveArchivedWeeks();
-  renderArchivedWeeks();
- }else{
-  localStorage.removeItem("meuTempoWeekEvaluation_"+key);
- }
- $("weekEvaluation").value="";
- alert("Avaliação apagada.");
+ if(!confirm("Deseja apagar somente o texto da avaliação desta semana? Os registros de tempo e atividades serão preservados."))return;
+ try{
+  if(archived){
+   // Não alterar entradas, histórico ou qualquer outra semana.
+   const updated={...archived,evaluation:""};
+   const updatedWeeks={...archivedWeeks,[key]:updated};
+   localStorage.setItem("meuTempoArchivedWeeks",JSON.stringify(updatedWeeks));
+   archivedWeeks=updatedWeeks;
+   // Não redesenhar a lista: o relatório expandido não deve desaparecer.
+   const openDetail=document.querySelector('.archive-item[data-week="'+key+'"] .archive-detail');
+   if(openDetail)openDetail.textContent=buildArchivedWeekReport(key,updated);
+  }else{
+   localStorage.removeItem("meuTempoWeekEvaluation_"+key);
+  }
+  $("weekEvaluation").value="";
+  alert("Somente a avaliação desta semana foi apagada.");
+ }catch(error){console.error("Falha ao apagar avaliação:",error);alert("Não foi possível salvar a alteração. Nenhum registro de tempo foi apagado.");}
+}
+function buildArchivedWeekReport(key,data){
+ const entries=Array.isArray(data.entries)?data.entries:[];
+ const history=Array.isArray(data.history)?data.history:[];
+ const total=entries.reduce((n,e)=>n+entrySeconds(e),0);
+ const lines=["MEU TEMPO — RELATÓRIO SEMANAL",weekDateRange(key),"","Total: "+formatTotal(total),"Registros: "+entries.length,"","ATIVIDADES",
+  ...entries.map(e=>`${e.date} · ${e.activity} · ${formatDuration(entrySeconds(e),true)} (${e.start||"--:--"}–${e.end||"--:--"})`),"",
+  "EXECUÇÃO DA PROGRAMAÇÃO",...history.map(e=>`${new Date(e.completedAt).toLocaleString("pt-BR")} · ${e.name||"Atividade"} · ${statusLabels[e.status]||e.status||"Registrada"} · ${formatDuration(e.actualSeconds||0,true)}`),"","AVALIAÇÃO",data.evaluation||"Nenhuma avaliação registrada."];
+ return lines.join("\n");
+}
+async function copyArchivedWeekReport(key,button){
+ const data=archivedWeeks[key];if(!data)return;
+ const report=buildArchivedWeekReport(key,data);
+ try{
+  if(navigator.clipboard&&window.isSecureContext){await navigator.clipboard.writeText(report);}
+  else{
+   const textarea=document.createElement("textarea");textarea.value=report;textarea.setAttribute("readonly","");textarea.style.cssText="position:fixed;left:-9999px;top:0";document.body.appendChild(textarea);textarea.select();
+   const success=document.execCommand("copy");textarea.remove();if(!success)throw new Error("Cópia não autorizada");
+  }
+  button.title="Copiado!";button.setAttribute("aria-label","Relatório copiado");
+  setTimeout(()=>{button.title="Copiar relatório";button.setAttribute("aria-label","Copiar relatório");},1800);
+ }catch(error){console.error("Falha ao copiar relatório:",error);alert("Não foi possível copiar automaticamente. Abra o relatório e selecione o texto para copiar.");}
 }
 function renderArchivedWeeks(){
- const host=$("archivedWeeksList");if(!host)return;host.innerHTML="";const keys=Object.keys(archivedWeeks).sort((a,b)=>b.localeCompare(a));
+ const host=$("archivedWeeksList");if(!host)return;
+ const expanded=new Set([...host.querySelectorAll('.archive-item')].filter(el=>el.querySelector('.archive-detail')).map(el=>el.dataset.week));
+ host.innerHTML="";const keys=Object.keys(archivedWeeks).sort((a,b)=>b.localeCompare(a));
  $("archivedWeeksEmpty").style.display=keys.length?"none":"block";
- keys.forEach(key=>{const data=archivedWeeks[key];const item=document.createElement("article");item.className="archive-item";const title=document.createElement("strong");title.textContent=weekDateRange(key);const meta=document.createElement("small");meta.textContent=(data.entries||[]).length+" registros · "+formatTotal((data.entries||[]).reduce((n,e)=>n+entrySeconds(e),0))+" · Arquivada em "+new Date(data.archivedAt).toLocaleDateString("pt-BR");const btn=document.createElement("button");btn.type="button";btn.className="secondary";btn.textContent="Ver semana arquivada";btn.onclick=()=>viewArchivedWeek(key,item);item.append(title,meta,btn);host.appendChild(item);});
+ keys.forEach(key=>{
+  const data=archivedWeeks[key];const entries=Array.isArray(data.entries)?data.entries:[];
+  const item=document.createElement("article");item.className="archive-item";item.dataset.week=key;
+  const title=document.createElement("strong");title.textContent=weekDateRange(key);
+  const meta=document.createElement("small");meta.textContent=entries.length+" registros · "+formatTotal(entries.reduce((n,e)=>n+entrySeconds(e),0))+" · Arquivada em "+(data.archivedAt?new Date(data.archivedAt).toLocaleDateString("pt-BR"):"data não informada");
+  const toolbar=document.createElement("div");toolbar.className="archive-toolbar";
+  const btn=document.createElement("button");btn.type="button";btn.className="secondary archive-view";btn.textContent="Ver semana arquivada";btn.onclick=()=>viewArchivedWeek(key,item);
+  const copy=document.createElement("button");copy.type="button";copy.className="archive-copy";copy.title="Copiar relatório";copy.setAttribute("aria-label","Copiar relatório");
+  copy.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>';
+  copy.onclick=()=>copyArchivedWeekReport(key,copy);
+  const reopen=document.createElement("button");reopen.type="button";reopen.className="secondary archive-reopen";reopen.textContent="Reabrir semana";reopen.onclick=()=>reopenArchivedWeek(key);
+  toolbar.append(btn,copy,reopen);item.append(title,meta,toolbar);host.appendChild(item);
+  if(expanded.has(key))viewArchivedWeek(key,item);
+ });
 }
 function viewArchivedWeek(key,container){
- const data=archivedWeeks[key];if(!data)return;let detail=container.querySelector(".archive-detail");if(detail){detail.remove();return;}detail=document.createElement("div");detail.className="archive-detail";
- const total=(data.entries||[]).reduce((n,e)=>n+entrySeconds(e),0);const lines=["Total: "+formatTotal(total),"Registros: "+(data.entries||[]).length,"", "ATIVIDADES",...(data.entries||[]).map(e=>`${e.date} · ${e.activity} · ${formatDuration(entrySeconds(e),true)} (${e.start||"--:--"}–${e.end||"--:--"})`),"","EXECUÇÃO DA PROGRAMAÇÃO",...(data.history||[]).map(e=>`${new Date(e.completedAt).toLocaleString("pt-BR")} · ${e.name||"Atividade"} · ${statusLabels[e.status]||e.status||"Registrada"} · ${formatDuration(e.actualSeconds||0,true)}`),"","AVALIAÇÃO",data.evaluation||"Nenhuma avaliação registrada."];
- detail.textContent=lines.join("\n");container.appendChild(detail);
+ const data=archivedWeeks[key];if(!data)return;
+ let detail=container.querySelector(".archive-detail");if(detail){detail.remove();return;}
+ detail=document.createElement("div");detail.className="archive-detail";detail.textContent=buildArchivedWeekReport(key,data);container.appendChild(detail);
+}
+function reopenArchivedWeek(key){
+ const data=archivedWeeks[key];if(!data)return;
+ if(!confirm("Reabrir a semana "+weekDateRange(key)+"?\n\nOs registros voltarão ao Histórico ativo e a avaliação poderá ser editada novamente."))return;
+ const entries=Array.isArray(data.entries)?data.entries:[];
+ const history=Array.isArray(data.history)?data.history:[];
+ // Evita duplicações caso já existam registros equivalentes no armazenamento ativo.
+ const entryIds=new Set(timeEntries.map(e=>String(e.id)));
+ const historyIds=new Set(historyEntries.map(e=>String(e.id)));
+ const entriesToRestore=entries.filter(e=>e.id==null||!entryIds.has(String(e.id)));
+ const historyToRestore=history.filter(e=>e.id==null||!historyIds.has(String(e.id)));
+ const restoredEntries=[...timeEntries,...entriesToRestore];
+ const restoredHistory=[...historyEntries,...historyToRestore];
+ const remainingWeeks={...archivedWeeks};delete remainingWeeks[key];
+ // Primeiro preparar TODAS as alterações; em falha, restaurar as chaves originais.
+ const keys=["meuTempoTimeLogs","meuTempoHistory","meuTempoWeekEvaluation_"+key,"meuTempoArchivedWeeks"];
+ const previous=Object.fromEntries(keys.map(k=>[k,localStorage.getItem(k)]));
+ try{
+  localStorage.setItem("meuTempoTimeLogs",JSON.stringify(restoredEntries));
+  localStorage.setItem("meuTempoHistory",JSON.stringify(restoredHistory));
+  localStorage.setItem("meuTempoWeekEvaluation_"+key,String(data.evaluation||""));
+  localStorage.setItem("meuTempoArchivedWeeks",JSON.stringify(remainingWeeks));
+ }catch(error){
+  console.error("Falha ao reabrir semana:",error);
+  for(const k of keys){try{if(previous[k]===null)localStorage.removeItem(k);else localStorage.setItem(k,previous[k]);}catch(restoreError){console.error("Falha ao restaurar cópia da chave",k,restoreError);}}
+  alert("Não foi possível reabrir a semana. Os dados anteriores foram mantidos sempre que possível.");return;
+ }
+ timeEntries=restoredEntries;historyEntries=restoredHistory;archivedWeeks=remainingWeeks;
+ $("dashboardWeek").value=key;
+ renderTimeDashboard();renderHistory();renderHome();
+ alert("Semana reaberta. Os registros e a avaliação voltaram para o Histórico ativo.");
 }
 function isoWeekKey(date){
  const d=new Date(date.getFullYear(),date.getMonth(),date.getDate());
