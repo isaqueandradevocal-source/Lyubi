@@ -457,6 +457,9 @@ header,.home-intro{background:#424448;box-shadow:none}
    <p class="note" id="weekArchiveStatus" aria-live="polite">Ao arquivar, os registros saem da semana ativa, mas ficam guardados para consulta.</p>
    <label class="field-label" for="weekEvaluation">Minha avaliação da semana</label>
    <textarea id="weekEvaluation" placeholder="O que funcionou? O que me atrapalhou? O que quero melhorar na próxima semana?" style="width:100%;min-height:100px;padding:12px;border:1px solid #c9cbd0;border-radius:11px;font:inherit"></textarea>
+   <div class="week-actions no-print" style="margin-top:8px">
+    <button type="button" class="secondary" id="clearWeekEvaluationButton" onclick="clearWeekEvaluation()">Apagar avaliação</button>
+   </div>
   </section>
   <section class="panel">
    <h2>Registrar tempo</h2>
@@ -746,6 +749,23 @@ function weekDateRange(key){
 function weekOfHistoryEntry(entry){const d=new Date(entry.completedAt);return isNaN(d)?"":isoWeekKey(d);}
 function getWeekEntries(key){return timeEntries.filter(item=>dateKeyForEntry(item)===key);}
 function syncWeekEvaluation(){const key=$("dashboardWeek")?.value||currentWeekKey();const archived=archivedWeeks[key];$("weekEvaluation").value=archived?String(archived.evaluation||""):String(localStorage.getItem("meuTempoWeekEvaluation_"+key)||"");$("weekEvaluation").disabled=!!archived;$("archiveWeekButton").disabled=!!archived;$("archiveWeekButton").textContent=archived?"Semana arquivada":"Salvar e arquivar semana";$ ("weekArchiveStatus").textContent=archived?"Esta semana já está arquivada. Os registros estão preservados abaixo.":"Ao arquivar, os registros saem da semana ativa, mas ficam guardados para consulta.";}
+function clearWeekEvaluation(){
+ const key=$("dashboardWeek")?.value||currentWeekKey();
+ const hasText=archivedWeeks[key]
+  ? String(archivedWeeks[key].evaluation||"").trim()
+  : String(localStorage.getItem("meuTempoWeekEvaluation_"+key)||"").trim();
+ if(!hasText){$("weekEvaluation").value="";alert("Não há avaliação salva para esta semana.");return;}
+ if(!confirm("Deseja apagar definitivamente a avaliação desta semana?"))return;
+ if(archivedWeeks[key]){
+  archivedWeeks[key].evaluation="";
+  saveArchivedWeeks();
+  renderArchivedWeeks();
+ }else{
+  localStorage.removeItem("meuTempoWeekEvaluation_"+key);
+ }
+ $("weekEvaluation").value="";
+ alert("Avaliação apagada.");
+}
 function renderArchivedWeeks(){
  const host=$("archivedWeeksList");if(!host)return;host.innerHTML="";const keys=Object.keys(archivedWeeks).sort((a,b)=>b.localeCompare(a));
  $("archivedWeeksEmpty").style.display=keys.length?"none":"block";
