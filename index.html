@@ -394,6 +394,21 @@ header,.home-intro{background:#424448;box-shadow:none}
 #inboxTab svg{width:22px;height:25px;vertical-align:middle;margin-right:0;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .inbox-count{display:inline-flex;align-items:center;justify-content:center;min-width:19px;height:19px;padding:0 5px;margin-left:5px;border-radius:20px;background:#557568;color:#fff;font-size:11px;font-weight:700}
 @media(max-width:600px){#inboxTab{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}#inboxTab svg{display:block;width:22px;height:25px;margin:0}.inbox-count{position:absolute;top:2px;right:calc(50% - 25px);min-width:16px;height:16px;font-size:10px;margin:0}.inbox-add{align-items:stretch!important}.inbox-add button{padding-left:12px;padding-right:12px}}
+
+/* Agenda semanal/mensal das programações */
+.agenda-wrap{margin-top:18px;padding:14px;border:1px solid var(--mt-line);border-radius:14px;background:#fafafa}
+.agenda-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.agenda-nav{display:flex;align-items:center;gap:8px}.agenda-nav button{padding:8px 12px}
+.agenda-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}
+.agenda-weekday{text-align:center;font-size:11px;font-weight:750;color:var(--mt-muted);padding:5px 0}
+.agenda-day{min-height:62px;padding:7px 3px;border:1px solid var(--mt-line);border-radius:9px;background:#fff;color:var(--mt-text);display:flex;flex-direction:column;align-items:center;gap:3px;font-size:13px;box-shadow:none}
+.agenda-day:hover{background:#f0f1f3}.agenda-day.outside{opacity:.38}.agenda-day.selected{outline:2px solid var(--mt-navy);background:#eceef0}.agenda-day.today{font-weight:800}.agenda-day .agenda-dot{width:6px;height:6px;border-radius:50%;background:#39865f;display:block}
+.agenda-selected{margin-top:14px;padding:12px;background:#fff;border:1px solid var(--mt-line);border-radius:11px}
+.agenda-assignment{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid var(--mt-line);font-size:13px}.agenda-assignment:last-child{border-bottom:0}
+.agenda-assignment button{padding:7px 10px;font-size:12px}.agenda-add-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;margin-top:12px;align-items:end}
+.agenda-add-row .field{margin:0}.agenda-empty{font-size:13px;color:var(--mt-muted);padding:8px 0}
+@media(max-width:520px){.agenda-day{min-height:50px;padding:5px 1px}.agenda-add-row{grid-template-columns:1fr}.agenda-add-row button{width:100%}.agenda-assignment{align-items:flex-start;flex-direction:column}}
+
 </style>
 </head>
 <body>
@@ -605,6 +620,37 @@ header,.home-intro{background:#424448;box-shadow:none}
    </div>
 
    <p class="note" id="scheduleStatus">As programações ficam salvas neste dispositivo.</p>
+
+   <section class="agenda-wrap" aria-label="Agenda de programações">
+    <div class="agenda-head">
+     <strong>Agenda de programações</strong>
+     <div class="actions">
+      <button type="button" class="secondary" id="agendaWeekView" onclick="setAgendaView('week')">Semana</button>
+      <button type="button" class="secondary" id="agendaMonthView" onclick="setAgendaView('month')">Mês</button>
+     </div>
+    </div>
+    <div class="agenda-head">
+     <div class="agenda-nav">
+      <button type="button" class="secondary" onclick="moveAgenda(-1)" aria-label="Período anterior">‹</button>
+      <strong id="agendaPeriodLabel">Semana</strong>
+      <button type="button" class="secondary" onclick="moveAgenda(1)" aria-label="Próximo período">›</button>
+     </div>
+     <button type="button" class="secondary" onclick="goAgendaToday()">Hoje</button>
+    </div>
+    <div id="agendaCalendar" class="agenda-grid"></div>
+    <div class="agenda-selected">
+     <strong id="agendaSelectedLabel">Programação do dia</strong>
+     <div id="agendaDayAssignments" class="agenda-empty">Nenhuma programação marcada para este dia.</div>
+     <div class="agenda-add-row">
+      <div class="field">
+       <label class="field-label" for="agendaScheduleSelect">Escolher programação salva</label>
+       <select id="agendaScheduleSelect"><option value="">Selecione uma programação</option></select>
+      </div>
+      <button type="button" onclick="assignScheduleToDay()">Programar neste dia</button>
+     </div>
+    </div>
+    <p class="note">A agenda guarda uma cópia da programação na data escolhida. Alterar o modelo salvo depois não muda os dias já agendados.</p>
+   </section>
   
     <div class="settings">
     <label>Pausa curta (min)<br><input id="shortBreak" type="number" min="0" value="2"></label>
@@ -655,6 +701,10 @@ let savedSchedules=loadSavedSchedules();
 let timeEntries=loadTimeEntries();
 let archivedWeeks=(()=>{try{const v=JSON.parse(localStorage.getItem("meuTempoArchivedWeeks")||"{}");return v&&typeof v==="object"?v:{};}catch(e){return {};}})();
 let viewingArchivedWeek=null;
+let agendaView="week";
+let agendaCursor=new Date();
+let agendaSelectedDate=localDateKey(new Date());
+let agendaAssignments=(()=>{try{const v=JSON.parse(localStorage.getItem("meuTempoAgenda")||"{}");return v&&typeof v==="object"&&!Array.isArray(v)?v:{};}catch(e){return {};}})();
 
 let currentIndex=0,remaining=0,remainingMs=0,totalDuration=0,timer=null,paused=false,inBreak=false,running=false,audioContext=null,deadline=0;
 let taskActiveStartedAt=0,taskElapsedMs=0,taskStartedAt=0;
@@ -1227,7 +1277,7 @@ function loadSavedSchedules(){
   return Array.isArray(value)?value.filter(item=>item&&typeof item.name==="string"&&Array.isArray(item.tasks)):[];
  }catch(error){return [];}
 }
-function saveSchedulesStorage(){localStorage.setItem("meuTempoSchedules",JSON.stringify(savedSchedules));renderScheduleOptions();}
+function saveSchedulesStorage(){localStorage.setItem("meuTempoSchedules",JSON.stringify(savedSchedules));renderScheduleOptions();renderAgendaScheduleOptions();}
 function renderScheduleOptions(){
  const select=$("savedSchedules");if(!select)return;
  const selected=select.value;select.innerHTML="";
@@ -1263,6 +1313,61 @@ function loadSchedule(){
  saveTasks();renderTasks();renderHome();
  setScheduleStatus("Programação “"+schedule.name+"” carregada. A lista anterior foi substituída; o histórico foi mantido.","success");
 }
+function localDateKey(date){return date.getFullYear()+"-"+String(date.getMonth()+1).padStart(2,"0")+"-"+String(date.getDate()).padStart(2,"0");}
+function parseLocalDate(key){const p=String(key).split("-").map(Number);return new Date(p[0],p[1]-1,p[2],12);}
+function saveAgendaAssignments(){localStorage.setItem("meuTempoAgenda",JSON.stringify(agendaAssignments));}
+function setAgendaView(view){agendaView=view;renderAgenda();}
+function moveAgenda(amount){if(agendaView==="month")agendaCursor=new Date(agendaCursor.getFullYear(),agendaCursor.getMonth()+amount,1,12);else agendaCursor=new Date(agendaCursor.getFullYear(),agendaCursor.getMonth(),agendaCursor.getDate()+amount*7,12);renderAgenda();}
+function goAgendaToday(){agendaCursor=new Date();agendaSelectedDate=localDateKey(new Date());renderAgenda();}
+function renderAgendaScheduleOptions(){
+ const select=$("agendaScheduleSelect");if(!select)return;const selected=select.value;select.innerHTML="";
+ const first=document.createElement("option");first.value="";first.textContent="Selecione uma programação";select.appendChild(first);
+ savedSchedules.forEach((item,index)=>{const option=document.createElement("option");option.value=String(index);option.textContent=item.name;select.appendChild(option);});
+ if(selected!==""&&savedSchedules[Number(selected)])select.value=selected;
+}
+function renderAgenda(){
+ const host=$("agendaCalendar");if(!host)return;
+ $("agendaWeekView").classList.toggle("active",agendaView==="week");$("agendaMonthView").classList.toggle("active",agendaView==="month");
+ host.innerHTML="";const weekdays=["Seg","Ter","Qua","Qui","Sex","Sáb","Dom"];
+ weekdays.forEach(day=>{const el=document.createElement("div");el.className="agenda-weekday";el.textContent=day;host.appendChild(el);});
+ let start,end;
+ if(agendaView==="month"){
+  const first=new Date(agendaCursor.getFullYear(),agendaCursor.getMonth(),1,12);start=new Date(first);start.setDate(first.getDate()-((first.getDay()+6)%7));end=new Date(start);end.setDate(start.getDate()+41);
+  $("agendaPeriodLabel").textContent=agendaCursor.toLocaleDateString("pt-BR",{month:"long",year:"numeric"});
+ }else{
+  start=new Date(agendaCursor);start.setDate(start.getDate()-((start.getDay()+6)%7));start.setHours(12,0,0,0);end=new Date(start);end.setDate(start.getDate()+6);
+  const f=d=>d.toLocaleDateString("pt-BR",{day:"2-digit",month:"short"});$("agendaPeriodLabel").textContent=f(start)+" – "+f(end)+" de "+end.getFullYear();
+ }
+ const count=agendaView==="month"?42:7;const today=localDateKey(new Date());
+ for(let i=0;i<count;i++){
+  const date=new Date(start);date.setDate(start.getDate()+i);const key=localDateKey(date);const btn=document.createElement("button");btn.type="button";btn.className="agenda-day";
+  if(agendaView==="month"&&date.getMonth()!==agendaCursor.getMonth())btn.classList.add("outside");if(key===agendaSelectedDate)btn.classList.add("selected");if(key===today)btn.classList.add("today");
+  const num=document.createElement("span");num.textContent=String(date.getDate());btn.appendChild(num);
+  if(Array.isArray(agendaAssignments[key])&&agendaAssignments[key].length){const dot=document.createElement("span");dot.className="agenda-dot";dot.title=agendaAssignments[key].length+" programação(ões)";btn.appendChild(dot);}
+  btn.onclick=()=>{agendaSelectedDate=key;renderAgenda();};host.appendChild(btn);
+ }
+ const selected=parseLocalDate(agendaSelectedDate);$("agendaSelectedLabel").textContent="Programação de "+selected.toLocaleDateString("pt-BR",{weekday:"long",day:"2-digit",month:"long",year:"numeric"});
+ const list=$("agendaDayAssignments");list.innerHTML="";const assignments=Array.isArray(agendaAssignments[agendaSelectedDate])?agendaAssignments[agendaSelectedDate]:[];
+ if(!assignments.length){list.className="agenda-empty";list.textContent="Nenhuma programação marcada para este dia.";}
+ else{list.className="";assignments.forEach((item,index)=>{const row=document.createElement("div");row.className="agenda-assignment";const label=document.createElement("strong");label.textContent=item.name+" · "+(item.tasks||[]).length+" atividades";const actions=document.createElement("div");actions.className="actions";const load=document.createElement("button");load.type="button";load.textContent="Carregar";load.onclick=()=>loadAgendaAssignment(agendaSelectedDate,index);const remove=document.createElement("button");remove.type="button";remove.className="danger";remove.textContent="Remover";remove.onclick=()=>removeAgendaAssignment(agendaSelectedDate,index);actions.append(load,remove);row.append(label,actions);list.appendChild(row);});}
+ renderAgendaScheduleOptions();
+}
+function assignScheduleToDay(){
+ const value=$("agendaScheduleSelect").value;if(value===""||!savedSchedules[Number(value)]){alert("Salve ou selecione uma programação antes de marcar no calendário.");return;}
+ const model=savedSchedules[Number(value)];const snapshot={id:String(Date.now())+"-"+Math.random().toString(36).slice(2,7),name:model.name,tasks:model.tasks.map(t=>({name:String(t.name),minutes:Number(t.minutes),category:t.category||"Outros",recordHistory:t.recordHistory!==false})),breaks:{...(model.breaks||{short:2,long:5,limit:15})},scheduledAt:new Date().toISOString()};
+ if(!Array.isArray(agendaAssignments[agendaSelectedDate]))agendaAssignments[agendaSelectedDate]=[];
+ agendaAssignments[agendaSelectedDate].push(snapshot);saveAgendaAssignments();renderAgenda();
+ setScheduleStatus("“"+model.name+"” foi programada para "+parseLocalDate(agendaSelectedDate).toLocaleDateString("pt-BR")+".","success");
+}
+function loadAgendaAssignment(date,index){
+ const item=agendaAssignments[date]?.[index];if(!item)return;if(running){alert("Encerre a execução atual antes de carregar outra programação.");return;}
+ if(!confirm("Carregar “"+item.name+"” para a programação atual? As tarefas atuais serão substituídas; o histórico será preservado."))return;
+ tasks=(item.tasks||[]).map(t=>({name:String(t.name),minutes:Number(t.minutes),category:t.category||"Outros",recordHistory:t.recordHistory!==false}));
+ if(item.breaks){$("shortBreak").value=Number(item.breaks.short)||0;$("longBreak").value=Number(item.breaks.long)||0;$("breakLimit").value=Number(item.breaks.limit)||15;}
+ saveTasks();renderTasks();renderHome();setScheduleStatus("Programação “"+item.name+"” carregada a partir da agenda.","success");
+}
+function removeAgendaAssignment(date,index){if(!confirm("Remover esta programação da agenda? O modelo salvo não será excluído."))return;agendaAssignments[date].splice(index,1);if(!agendaAssignments[date].length)delete agendaAssignments[date];saveAgendaAssignments();renderAgenda();}
+
 function exportSchedules(){
  if(!savedSchedules.length){alert("Você ainda não salvou nenhuma programação.");return;}
  const data={app:"LYUBI",formatVersion:1,exportedAt:new Date().toISOString(),schedules:savedSchedules};
@@ -1596,6 +1701,7 @@ $("dashboardWeek").addEventListener("change",renderTimeDashboard);
 $("weekEvaluation").addEventListener("input",()=>{const key=$("dashboardWeek").value||currentWeekKey();if(!archivedWeeks[key]){localStorage.setItem("meuTempoWeekEvaluation_"+key,$("weekEvaluation").value);}});
 updateActivitySuggestions();
 renderScheduleOptions();
+renderAgenda();
 renderTasks();
 renderInbox();
 renderHistory();
