@@ -396,6 +396,8 @@ header,.home-intro{background:#424448;box-shadow:none}
 @media(max-width:600px){#inboxTab{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}#inboxTab svg{display:block;width:22px;height:25px;margin:0}.inbox-count{position:absolute;top:2px;right:calc(50% - 25px);min-width:16px;height:16px;font-size:10px;margin:0}.inbox-add{align-items:stretch!important}.inbox-add button{padding-left:12px;padding-right:12px}}
 
 /* Agenda semanal/mensal das programações */
+.agenda-create-actions{margin-top:10px}.agenda-creator{margin-top:12px;padding:12px;border:1px solid var(--mt-line);border-radius:10px;background:#f7f7f8}.agenda-creator .field{margin:10px 0}.agenda-task-fields{display:grid;grid-template-columns:minmax(0,1fr) 90px minmax(130px,.7fr);gap:8px}.agenda-history-option{display:flex;align-items:center;gap:7px;font-size:12px;margin:8px 0}.agenda-draft-list{font-size:13px;color:var(--mt-muted);padding:8px 0}.agenda-draft-item{display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px solid var(--mt-line)}.agenda-draft-item button{padding:4px 8px;font-size:11px}@media(max-width:520px){.agenda-task-fields{grid-template-columns:1fr 85px}.agenda-task-fields .field:last-child{grid-column:1/-1}}
+
 .agenda-wrap{margin-top:18px;padding:14px;border:1px solid var(--mt-line);border-radius:14px;background:#fafafa}
 .agenda-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
 .agenda-nav{display:flex;align-items:center;gap:8px}.agenda-nav button{padding:8px 12px}
@@ -643,13 +645,29 @@ header,.home-intro{background:#424448;box-shadow:none}
      <div id="agendaDayAssignments" class="agenda-empty">Nenhuma programação marcada para este dia.</div>
      <div class="agenda-add-row">
       <div class="field">
-       <label class="field-label" for="agendaScheduleSelect">Escolher programação salva</label>
+       <label class="field-label" for="agendaScheduleSelect">Usar uma programação já salva</label>
        <select id="agendaScheduleSelect"><option value="">Selecione uma programação</option></select>
       </div>
-      <button type="button" onclick="assignScheduleToDay()">Programar neste dia</button>
+      <button type="button" onclick="assignScheduleToDay()">Adicionar ao dia</button>
+     </div>
+     <div class="agenda-create-actions">
+      <button type="button" class="secondary" onclick="toggleAgendaCreator(true)">+ Criar programação diretamente neste dia</button>
+     </div>
+     <div id="agendaCreator" class="agenda-creator" hidden>
+      <strong>Criar programação para esta data</strong>
+      <div class="field"><label class="field-label" for="agendaNewName">Nome da programação</label><input id="agendaNewName" placeholder="Ex.: Rotina da manhã"></div>
+      <div class="agenda-task-fields">
+       <div class="field"><label class="field-label" for="agendaNewTask">Atividade</label><input id="agendaNewTask" placeholder="O que você vai fazer?"></div>
+       <div class="field"><label class="field-label" for="agendaNewMinutes">Minutos</label><input id="agendaNewMinutes" type="number" min="1" value="30"></div>
+       <div class="field"><label class="field-label" for="agendaNewCategory">Categoria</label><select id="agendaNewCategory"><option>Casa</option><option>Área externa</option><option>Cuidados pessoais</option><option>Família</option><option>Trabalho</option><option>Estudos</option><option>Espiritualidade</option><option>Exercícios</option><option>Outros</option></select></div>
+      </div>
+      <label class="agenda-history-option"><input id="agendaNewHistory" type="checkbox"> Registrar no histórico quando executar</label>
+      <button type="button" class="secondary" onclick="addAgendaDraftTask()">+ Adicionar atividade</button>
+      <div id="agendaDraftList" class="agenda-draft-list">Nenhuma atividade adicionada.</div>
+      <div class="actions"><button type="button" onclick="saveAgendaCreatedProgram()">Salvar programação neste dia</button><button type="button" class="secondary" onclick="toggleAgendaCreator(false)">Cancelar</button></div>
      </div>
     </div>
-    <p class="note">A agenda guarda uma cópia da programação na data escolhida. Alterar o modelo salvo depois não muda os dias já agendados.</p>
+    <p class="note">Você pode escolher um modelo salvo ou criar uma programação nova diretamente para a data selecionada. A criação direta não altera seus modelos salvos.</p>
    </section>
   
     <div class="settings">
@@ -705,6 +723,7 @@ let agendaView="week";
 let agendaCursor=new Date();
 let agendaSelectedDate=localDateKey(new Date());
 let agendaAssignments=(()=>{try{const v=JSON.parse(localStorage.getItem("meuTempoAgenda")||"{}");return v&&typeof v==="object"&&!Array.isArray(v)?v:{};}catch(e){return {};}})();
+let agendaDraftTasks=[];
 
 let currentIndex=0,remaining=0,remainingMs=0,totalDuration=0,timer=null,paused=false,inBreak=false,running=false,audioContext=null,deadline=0;
 let taskActiveStartedAt=0,taskElapsedMs=0,taskStartedAt=0;
@@ -1352,6 +1371,10 @@ function renderAgenda(){
  else{list.className="";assignments.forEach((item,index)=>{const row=document.createElement("div");row.className="agenda-assignment";const label=document.createElement("strong");label.textContent=item.name+" · "+(item.tasks||[]).length+" atividades";const actions=document.createElement("div");actions.className="actions";const load=document.createElement("button");load.type="button";load.textContent="Carregar";load.onclick=()=>loadAgendaAssignment(agendaSelectedDate,index);const remove=document.createElement("button");remove.type="button";remove.className="danger";remove.textContent="Remover";remove.onclick=()=>removeAgendaAssignment(agendaSelectedDate,index);actions.append(load,remove);row.append(label,actions);list.appendChild(row);});}
  renderAgendaScheduleOptions();
 }
+function toggleAgendaCreator(show){const box=$("agendaCreator");if(!box)return;box.hidden=!show;if(show){agendaDraftTasks=[];renderAgendaDraftTasks();$("agendaNewName").focus();}}
+function renderAgendaDraftTasks(){const host=$("agendaDraftList");if(!host)return;host.innerHTML="";if(!agendaDraftTasks.length){host.textContent="Nenhuma atividade adicionada.";return;}agendaDraftTasks.forEach((task,index)=>{const row=document.createElement("div");row.className="agenda-draft-item";const label=document.createElement("span");label.textContent=task.name+" · "+task.minutes+" min · "+task.category;const del=document.createElement("button");del.type="button";del.className="danger";del.textContent="Remover";del.onclick=()=>{agendaDraftTasks.splice(index,1);renderAgendaDraftTasks();};row.append(label,del);host.appendChild(row);});}
+function addAgendaDraftTask(){const name=$("agendaNewTask").value.trim();const minutes=Number($("agendaNewMinutes").value);if(!name){alert("Digite o nome da atividade.");return;}if(!Number.isFinite(minutes)||minutes<1){alert("Informe uma duração válida em minutos.");return;}agendaDraftTasks.push({name,minutes,category:$("agendaNewCategory").value,recordHistory:$("agendaNewHistory").checked});$("agendaNewTask").value="";$("agendaNewHistory").checked=false;renderAgendaDraftTasks();$("agendaNewTask").focus();}
+function saveAgendaCreatedProgram(){const name=$("agendaNewName").value.trim();if(!name){alert("Dê um nome para a programação.");return;}if(!agendaDraftTasks.length){alert("Adicione pelo menos uma atividade.");return;}const snapshot={id:String(Date.now())+"-"+Math.random().toString(36).slice(2,7),name,tasks:agendaDraftTasks.map(t=>({...t})),breaks:{short:Number($("shortBreak").value)||2,long:Number($("longBreak").value)||5,limit:Number($("breakLimit").value)||15},scheduledAt:new Date().toISOString()};if(!Array.isArray(agendaAssignments[agendaSelectedDate]))agendaAssignments[agendaSelectedDate]=[];agendaAssignments[agendaSelectedDate].push(snapshot);saveAgendaAssignments();agendaDraftTasks=[];$("agendaNewName").value="";toggleAgendaCreator(false);renderAgenda();setScheduleStatus("“"+name+"” foi criada e agendada para "+parseLocalDate(agendaSelectedDate).toLocaleDateString("pt-BR")+".","success");}
 function assignScheduleToDay(){
  const value=$("agendaScheduleSelect").value;if(value===""||!savedSchedules[Number(value)]){alert("Salve ou selecione uma programação antes de marcar no calendário.");return;}
  const model=savedSchedules[Number(value)];const snapshot={id:String(Date.now())+"-"+Math.random().toString(36).slice(2,7),name:model.name,tasks:model.tasks.map(t=>({name:String(t.name),minutes:Number(t.minutes),category:t.category||"Outros",recordHistory:t.recordHistory!==false})),breaks:{...(model.breaks||{short:2,long:5,limit:15})},scheduledAt:new Date().toISOString()};
