@@ -411,11 +411,21 @@ header,.home-intro{background:#424448;box-shadow:none}
 .agenda-add-row .field{margin:0}.agenda-empty{font-size:13px;color:var(--mt-muted);padding:8px 0}
 @media(max-width:520px){.agenda-day{min-height:50px;padding:5px 1px}.agenda-add-row{grid-template-columns:1fr}.agenda-add-row button{width:100%}.agenda-assignment{align-items:flex-start;flex-direction:column}}
 
+
+/* Indicador de ampulhetas e tempo conquistado */
+.time-reward-bar{display:flex;align-items:center;justify-content:center;gap:10px;padding:9px 14px;background:#34363a;color:#fff;border-radius:0 0 14px 14px;margin:0 auto 12px;max-width:520px;font-size:13px}
+.time-reward-glasses{display:flex;gap:3px;align-items:center;font-size:19px;letter-spacing:-3px;min-width:54px}
+.time-reward-glasses span{opacity:.35;transition:opacity .2s,transform .2s}
+.time-reward-glasses span.active{opacity:1;transform:translateY(-1px)}
+.time-reward-label{font-weight:650}.time-reward-label strong{font-size:15px;margin-left:4px}.time-reward-hint{font-size:11px;opacity:.72;margin-left:3px}
+@media(max-width:520px){.time-reward-bar{margin:0 10px 10px;padding:8px 10px;gap:7px}.time-reward-glasses{font-size:17px;min-width:48px}.time-reward-hint{display:none}}
+
 </style>
 </head>
 <body>
 
 <header>
+ <div class="time-reward-bar" aria-live="polite"><div class="time-reward-glasses" id="timeRewardGlasses"><span>⌛</span><span>⌛</span><span>⌛</span></div><div class="time-reward-label">Tempo ganho: <strong id="timeRewardTotal">0 minutos</strong></div><span class="time-reward-hint" id="timeRewardHint">Conclua tarefas para conquistar tempo</span></div>
  <nav class="page-nav" aria-label="Navegação principal"><button type="button" id="plannerTab" class="active" onclick="showPage('planner')">Início</button><button type="button" id="inboxTab" onclick="showPage('inbox')" aria-label="Ideias"><svg viewBox="0 0 64 74" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M32 9C18.8 9 8.5 19.4 8.5 32.3c0 8.4 3.8 14.8 9.2 20.1 2.4 2.4 3.3 4.6 3.3 8.2h22c0-3.6.9-5.8 3.3-8.2 5.4-5.3 9.2-11.7 9.2-20.1C55.5 19.4 45.2 9 32 9Z"/><path d="M21 60.6h22M21.5 64.5l21-1.8M22.5 68.2l19-1.7M26 71.5h12"/><path d="M32 2v4M10.5 9.5l4.2 4.2M2 32h4M53.5 13.7l4.2-4.2M58 32h4M10.5 54.5l4.2-4.2M53.5 50.3l4.2 4.2"/></g></svg>Ideias<span id="inboxCount" class="inbox-count">0</span></button><button type="button" id="homeTab" onclick="showPage('home')">Histórico</button></nav>
 </header>
 
@@ -538,6 +548,7 @@ header,.home-intro{background:#424448;box-shadow:none}
   </section>
  </main>
 </section>
+
 
 <div id="plannerPage" class="">
  <main>
@@ -1190,6 +1201,7 @@ function updateRealClock(){
  const clock=$("realClock");if(!clock)return;
  clock.textContent=formatClock(currentTaskElapsedMs()/1000);
  $("realBox").classList.toggle("paused",paused&&!inBreak);
+ updateTimeRewardDisplay();
 }
 
 /* Registra o tempo real da tarefa atual (concluída, pulada ou encerrada) e zera o cronômetro crescente */
@@ -1234,10 +1246,31 @@ function saveCurrentTaskTime(status){
  return actualSeconds;
 }
 
+// Recompensas em tempo: o saldo é diário e o histórico permanece salvo.
+let rewardState=(()=>{try{return JSON.parse(localStorage.getItem("meuTempoRewards")||"{}");}catch(e){return {};}})();
+let rewardLedger=(()=>{try{const v=JSON.parse(localStorage.getItem("meuTempoRewardLedger")||"[]");return Array.isArray(v)?v:[];}catch(e){return [];}})();
+function saveRewards(){localStorage.setItem("meuTempoRewards",JSON.stringify(rewardState));localStorage.setItem("meuTempoRewardLedger",JSON.stringify(rewardLedger));}
+function syncRewardDay(){const today=todayKey();if(rewardState.date&&rewardState.date!==today&&Number(rewardState.balance)>0){rewardLedger.unshift({date:rewardState.date,type:"expired",amount:Number(rewardState.balance),label:"Tempo de recompensa não utilizado expirou"});}if(rewardState.date!==today){rewardState={date:today,balance:0,earned:0};saveRewards();}}
+function updateTimeRewardDisplay(){
+ syncRewardDay();
+ const earned=Number(rewardState.earned)||0;
+ const inProgress=(!paused&&!inBreak&&taskStartedAt)?Math.floor(Math.max(0,currentTaskElapsedMs())/120000):0;
+ const total=earned+inProgress;
+ const totalEl=$("timeRewardTotal");if(totalEl)totalEl.textContent=total+" "+(total===1?"minuto":"minutos");
+ const hint=$("timeRewardHint");if(hint)hint.textContent=inProgress>0?"Você está conquistando mais tempo agora":"Conclua tarefas para conquistar tempo";
+ const icons=$("timeRewardGlasses");if(icons){const active=Math.min(3,total);[...icons.children].forEach((el,i)=>el.classList.toggle("active",i<active));}
+}
+function addRewardTime(seconds,taskName){syncRewardDay();const minutes=Math.floor(Math.max(0,Number(seconds)||0)/120);if(minutes<1){updateTimeRewardDisplay();return 0;}rewardState.balance=(Number(rewardState.balance)||0)+minutes;rewardState.earned=(Number(rewardState.earned)||0)+minutes;rewardLedger.unshift({date:todayKey(),type:"earned",amount:minutes,label:"Tempo conquistado ao concluir: "+taskName});saveRewards();updateTimeRewardDisplay();return minutes;}
+// A virada do dia zera o saldo disponível, mantendo o extrato histórico.
+setInterval(()=>{const oldDate=rewardState.date;syncRewardDay();if(oldDate!==rewardState.date)updateTimeRewardDisplay();},30000);
+updateTimeRewardDisplay();
+
 function recordCompletedTask(){
  const task=tasks[currentIndex];
  if(!task)return;
  const actualSeconds=saveCurrentTaskTime("concluída");
+ const earnedMinutes=addRewardTime(actualSeconds,task.name);
+ if(earnedMinutes>0){const notice="Você conquistou "+earnedMinutes+" minuto"+(earnedMinutes===1?"":"s")+" de tempo!";const status=$("status");if(status)status.textContent=notice;}
  const key=todayKey();
  if(!dailyStats[key])dailyStats[key]={completed:0,seconds:0};
  dailyStats[key].completed++;
@@ -1716,6 +1749,7 @@ $("taskName").addEventListener("input",()=>{$("activitySuggestion").value="";});
 $("taskName").addEventListener("keydown",e=>{if(e.key==="Enter")addTask();});
 $("inboxInput").addEventListener("keydown",e=>{if(e.key==="Enter")addInboxTask();});
 
+syncRewardDay();
 const todayISO=localDateKey(new Date());
 $("timeDate").value=todayISO;
 $("dashboardWeek").value=currentWeekKey();
