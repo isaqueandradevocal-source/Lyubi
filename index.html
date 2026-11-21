@@ -690,13 +690,13 @@ header,.home-intro{background:#424448;box-shadow:none}
     <p class="note">Você pode escolher um modelo salvo ou criar uma programação nova diretamente para a data selecionada. A criação direta não altera seus modelos salvos.</p>
    </section>
   
-    <div class="settings">
+    <div class="settings" style="display:none">
     <label>Pausa curta (min)<br><input id="shortBreak" type="number" min="0" value="2"></label>
     <label>Pausa longa (min)<br><input id="longBreak" type="number" min="0" value="5"></label>
     <label>Limite (min)<br><input id="breakLimit" type="number" min="1" value="15"></label>
    </div>
 
-   <p class="note">Tarefas abaixo do limite usam a pausa curta. As demais usam a pausa longa. Não há pausa após a última tarefa.</p>
+   <p class="note">A recompensa é liberada somente ao concluir uma tarefa: até 15 min = 1 min; acima de 15 até 25 min = 4 min; acima de 25 min = 6 min. Você escolhe aproveitar a pausa agora ou guardar o tempo nas ampulhetas.</p>
   </details>
 
   <div class="planner-bottom-actions">
@@ -748,6 +748,7 @@ let agendaDraftTasks=[];
 
 let currentIndex=0,remaining=0,remainingMs=0,totalDuration=0,timer=null,paused=false,inBreak=false,running=false,audioContext=null,deadline=0;
 let taskActiveStartedAt=0,taskElapsedMs=0,taskStartedAt=0;
+let timerWakeLock=null;const TIMER_STATE_KEY="lyubiExecutionStateV2";
 let mediaRecorder=null,recordedChunks=[],recordingStream=null,lastBreakMessage="";
 
 const $=id=>document.getElementById(id);
@@ -1266,8 +1267,8 @@ let lastDisplayedRewardTotal=null;
 function updateTimeRewardDisplay(){
  syncRewardDay();
  const earned=Number(rewardState.earned)||0;
- const inProgress=(!paused&&!inBreak&&taskStartedAt)?Math.floor(Math.max(0,currentTaskElapsedMs())/120000):0;
- const total=earned+inProgress;
+ const inProgress=0;
+ const total=earned;
  const totalEl=$("timeRewardTotal");if(totalEl)totalEl.textContent=total+" "+(total===1?"minuto":"minutos");
  const execTotal=$("execRewardTotal");if(execTotal){const balance=Number(rewardState.balance)||0;execTotal.textContent=balance+" "+(balance===1?"min":"min");}
  const hint=$("timeRewardHint");if(hint)hint.textContent=inProgress>0?"Você está conquistando mais tempo agora":"Conclua tarefas e conquiste tempo livre";
@@ -1275,7 +1276,20 @@ function updateTimeRewardDisplay(){
  const icons=$("timeRewardGlasses");if(icons){const active=Math.min(3,total);[...icons.children].forEach((el,i)=>{const wasActive=el.classList.contains("active");el.classList.toggle("active",i<active);if(i<active&&!wasActive&&lastDisplayedRewardTotal!==null){el.classList.remove("reward-pop");void el.offsetWidth;el.classList.add("reward-pop");}});}
  lastDisplayedRewardTotal=total;
 }
-function addRewardTime(seconds,taskName){syncRewardDay();const minutes=Math.floor(Math.max(0,Number(seconds)||0)/120);if(minutes<1){updateTimeRewardDisplay();return 0;}rewardState.balance=(Number(rewardState.balance)||0)+minutes;rewardState.earned=(Number(rewardState.earned)||0)+minutes;rewardLedger.unshift({date:todayKey(),type:"earned",amount:minutes,label:"Tempo conquistado ao concluir: "+taskName});saveRewards();updateTimeRewardDisplay();return minutes;}
+function rewardMinutesForTask(task){
+ const minutes=Math.max(0,Number(task&&task.minutes)||0);
+ if(minutes<=15)return 1;
+ if(minutes<=25)return 4;
+ return 6;
+}
+function addRewardTime(minutes,taskName){
+ syncRewardDay();minutes=Math.max(0,Math.floor(Number(minutes)||0));
+ if(!minutes){updateTimeRewardDisplay();return 0;}
+ rewardState.balance=(Number(rewardState.balance)||0)+minutes;
+ rewardState.earned=(Number(rewardState.earned)||0)+minutes;
+ rewardLedger.unshift({date:todayKey(),type:"earned",amount:minutes,label:"Recompensa guardada ao concluir: "+taskName});
+ saveRewards();updateTimeRewardDisplay();return minutes;
+}
 // A virada do dia zera o saldo disponível, mantendo o extrato histórico.
 setInterval(()=>{const oldDate=rewardState.date;syncRewardDay();if(oldDate!==rewardState.date)updateTimeRewardDisplay();},30000);
 updateTimeRewardDisplay();
@@ -1283,9 +1297,10 @@ updateTimeRewardDisplay();
 function recordCompletedTask(){
  const task=tasks[currentIndex];
  if(!task)return;
- const actualSeconds=saveCurrentTaskTime("concluída");
- const earnedMinutes=addRewardTime(actualSeconds,task.name);
- if(earnedMinutes>0){const notice="Você conquistou "+earnedMinutes+" minuto"+(earnedMinutes===1?"":"s")+" de tempo!";const status=$("status");if(status)status.textContent=notice;}
+ saveCurrentTaskTime("concluída");
+ const earnedMinutes=rewardMinutesForTask(task);
+ const status=$("status");if(status)status.textContent="Tarefa concluída! Você liberou "+earnedMinutes+" minuto"+(earnedMinutes===1?"":"s")+" de recompensa.";
+ return earnedMinutes;
  const key=todayKey();
  if(!dailyStats[key])dailyStats[key]={completed:0,seconds:0};
  dailyStats[key].completed++;
@@ -1588,12 +1603,7 @@ function clearTasks(){
  tasks=[];saveTasks();renderTasks();renderHome();
 }
 
-function getBreak(task){
- const limit=Math.max(1,Number($("breakLimit").value)||15);
- const short=Math.max(0,Number($("shortBreak").value)||0);
- const long=Math.max(0,Number($("longBreak").value)||0);
- return task.minutes<limit?short:long;
-}
+function getBreak(task){return rewardMinutesForTask(task);}
 function getBreakMessage(){
  let options=breakMessages.filter(message=>message!==lastBreakMessage);
  if(!options.length)options=breakMessages;
@@ -1603,7 +1613,7 @@ function getBreakMessage(){
 async function startProgram(){
  if(!tasks.length)return;
  if(!confirm("Preparado para começar sua programação?"))return;
- currentIndex=0;running=true;paused=false;inBreak=false;
+ currentIndex=0;running=true;paused=false;inBreak=false;taskElapsedMs=0;taskStartedAt=0;taskActiveStartedAt=0;
  $("execution").classList.add("active");$("startButton").disabled=true;
  try{
   if(!document.fullscreenElement&&$("execution").requestFullscreen)await $("execution").requestFullscreen();
@@ -1630,29 +1640,39 @@ function startTask(){
  paused=false;updatePauseButton();
  updateClock();beginTimer();
 }
-function startBreak(){
- taskActiveStartedAt=0;
- const duration=getBreak(tasks[currentIndex]);currentIndex++;
- if(currentIndex>=tasks.length){finishProgram(true);return;}
- if(duration<=0){startTask();return;}
+function startBreak(duration){
+ taskActiveStartedAt=0;currentIndex++;
+ if(duration<=0){if(currentIndex>=tasks.length)finishProgram(true);else startTask();return;}
  inBreak=true;$("execution").classList.add("break-mode");
  remaining=duration*60;remainingMs=remaining*1000;totalDuration=remaining;
- $("execTag").textContent="INTERVALO";$("execName").textContent="Hora de respirar";
+ $("execTag").textContent="RECOMPENSA";$("execName").textContent="Seu tempo livre";
  $("breakMessage").textContent=getBreakMessage();$("breakMessage").style.display="block";
- $("status").textContent="Descanse. A próxima tarefa virá em seguida.";
- paused=false;updatePauseButton();
- updateClock();beginTimer();
+ $("status").textContent=currentIndex<tasks.length?"Aproveite sua pausa. Depois, a próxima tarefa começa.":"Última tarefa concluída. Aproveite sua recompensa!";
+ paused=false;updatePauseButton();updateClock();beginTimer();
 }
+function saveExecutionState(){
+ if(!running){localStorage.removeItem(TIMER_STATE_KEY);return;}
+ localStorage.setItem(TIMER_STATE_KEY,JSON.stringify({currentIndex,remainingMs:Math.max(0,deadline?deadline-Date.now():remainingMs),totalDuration,paused,inBreak,running,taskStartedAt,taskActiveStartedAt,taskElapsedMs,deadline,updatedAt:Date.now()}));
+}
+async function requestTimerWakeLock(){
+ try{if("wakeLock" in navigator&&!document.hidden){timerWakeLock=await navigator.wakeLock.request("screen");timerWakeLock.addEventListener("release",()=>{timerWakeLock=null;});}}catch(e){console.log("Wake Lock indisponível:",e);}
+}
+async function releaseTimerWakeLock(){try{if(timerWakeLock){await timerWakeLock.release();timerWakeLock=null;}}catch(e){}}
 function beginTimer(){
- clearInterval(timer);deadline=Date.now()+remainingMs;
+ clearInterval(timer);deadline=Date.now()+remainingMs;saveExecutionState();requestTimerWakeLock();
  timer=setInterval(()=>{
   if(paused)return;
   remainingMs=Math.max(0,deadline-Date.now());
-  remaining=Math.ceil(remainingMs/1000);updateClock();
+  remaining=Math.ceil(remainingMs/1000);updateClock();saveExecutionState();
   if(remainingMs<=0){
    clearInterval(timer);
-   if(inBreak){playSound();startTask();}
-   else{recordCompletedTask();if(currentIndex<tasks.length-1)playSound();startBreak();}
+   if(inBreak){playSound();if(currentIndex>=tasks.length)finishProgram(true);else startTask();}
+   else{
+    const reward=recordCompletedTask();playSound();
+    const useNow=confirm("Tarefa concluída! Você ganhou "+reward+" minuto"+(reward===1?"":"s")+" de recompensa.\n\nOK: aproveitar a pausa agora.\nCancelar: guardar nas ampulhetas.");
+    if(useNow)startBreak(reward);
+    else{addRewardTime(reward,tasks[currentIndex]?.name||"tarefa concluída");currentIndex++;if(currentIndex>=tasks.length)finishProgram(true);else startTask();}
+   }
   }
  },250);
 }
@@ -1678,18 +1698,18 @@ function togglePause(){
  if(!paused){
   remainingMs=Math.max(0,deadline-Date.now());remaining=Math.ceil(remainingMs/1000);
   if(!inBreak&&taskActiveStartedAt){taskElapsedMs+=Date.now()-taskActiveStartedAt;taskActiveStartedAt=0;}
-  paused=true;updatePauseButton();$("status").textContent=inBreak?"Intervalo pausado.":"Cronômetros pausados.";updateClock();
+  paused=true;updatePauseButton();$("status").textContent=inBreak?"Intervalo pausado.":"Cronômetros pausados.";updateClock();saveExecutionState();
  }else{
   paused=false;deadline=Date.now()+remainingMs;
   if(!inBreak&&taskStartedAt)taskActiveStartedAt=Date.now();
-  updatePauseButton();$("status").textContent="Continue no seu ritmo.";updateRealClock();
+  updatePauseButton();$("status").textContent="Continue no seu ritmo.";updateRealClock();saveExecutionState();
  }
 }
 function skipStep(){
  if(!running)return;
  clearInterval(timer);
- if(inBreak)startTask();
- else{saveCurrentTaskTime("pulada");startBreak();}
+ if(inBreak){if(currentIndex>=tasks.length)finishProgram(true);else startTask();}
+ else{saveCurrentTaskTime("pulada");currentIndex++;if(currentIndex>=tasks.length)finishProgram(true);else startTask();}
 }
 function playSound(){
  try{
@@ -1735,7 +1755,7 @@ async function toggleRecording(){
  }
 }
 function finishProgram(completed=false){
- clearInterval(timer);timer=null;
+ clearInterval(timer);timer=null;localStorage.removeItem(TIMER_STATE_KEY);releaseTimerWakeLock();
  if(running&&!inBreak&&taskStartedAt)saveCurrentTaskTime("encerrada");
  running=false;paused=false;taskActiveStartedAt=0;taskElapsedMs=0;taskStartedAt=0;
  if(mediaRecorder&&mediaRecorder.state==="recording")mediaRecorder.stop();
@@ -1750,6 +1770,30 @@ function finishProgram(completed=false){
 document.addEventListener("fullscreenchange",()=>{
  $("exitFullscreen").textContent=document.fullscreenElement?"Sair da tela cheia":"Ativar tela cheia";
 });
+function restoreExecutionState(){
+ let saved;try{saved=JSON.parse(localStorage.getItem(TIMER_STATE_KEY)||"null");}catch(e){saved=null;}
+ if(!saved||!saved.running||!Array.isArray(tasks)||!tasks.length)return;
+ if(saved.currentIndex<0||saved.currentIndex>=tasks.length){localStorage.removeItem(TIMER_STATE_KEY);return;}
+ currentIndex=saved.currentIndex;running=true;paused=!!saved.paused;inBreak=!!saved.inBreak;
+ totalDuration=Number(saved.totalDuration)||0;taskStartedAt=Number(saved.taskStartedAt)||0;taskElapsedMs=Number(saved.taskElapsedMs)||0;
+ taskActiveStartedAt=Number(saved.taskActiveStartedAt)||0;deadline=Number(saved.deadline)||0;
+ remainingMs=paused?Math.max(0,Number(saved.remainingMs)||0):Math.max(0,deadline-Date.now());remaining=Math.ceil(remainingMs/1000);
+ $("execution").classList.add("active");if(inBreak)$("execution").classList.add("break-mode");
+ $("startButton").disabled=true;
+ if(inBreak){$("execTag").textContent="RECOMPENSA";$("execName").textContent="Seu tempo livre";$("breakMessage").style.display="block";}
+ else{$("execTag").textContent="TAREFA "+(currentIndex+1)+" DE "+tasks.length;$("execName").textContent=tasks[currentIndex].name;$("breakMessage").style.display="none";}
+ $("status").textContent=paused?"Execução recuperada e pausada.":"Execução recuperada. O cronômetro continuou contando.";
+ updatePauseButton();updateClock();
+ if(!paused){if(!inBreak&&taskActiveStartedAt){/* O relógio de tempo real considera o período desde o último início ativo. */}beginTimer();}
+ else saveExecutionState();
+}
+document.addEventListener("visibilitychange",()=>{
+ if(!running)return;
+ if(document.hidden){saveExecutionState();releaseTimerWakeLock();}
+ else{if(!paused){remainingMs=Math.max(0,deadline-Date.now());remaining=Math.ceil(remainingMs/1000);updateClock();if(remainingMs<=0){clearInterval(timer);if(inBreak){if(currentIndex>=tasks.length)finishProgram(true);else startTask();}else{const reward=recordCompletedTask();const useNow=confirm("Tarefa concluída! Você ganhou "+reward+" minuto(s).\n\nOK: aproveitar agora.\nCancelar: guardar nas ampulhetas.");if(useNow)startBreak(reward);else{addRewardTime(reward,tasks[currentIndex]?.name||"tarefa concluída");currentIndex++;if(currentIndex>=tasks.length)finishProgram(true);else startTask();}}}else{beginTimer();}}else requestTimerWakeLock();}
+});
+window.addEventListener("pagehide",saveExecutionState);
+window.addEventListener("pageshow",()=>{if(running&&!paused){remainingMs=Math.max(0,deadline-Date.now());remaining=Math.ceil(remainingMs/1000);updateClock();requestTimerWakeLock();}});
 if("serviceWorker" in navigator){
  window.addEventListener("load",()=>{
   navigator.serviceWorker.register("./sw.js")
@@ -1779,7 +1823,7 @@ renderInbox();
 renderHistory();
 renderHome();
 renderTimeDashboard();
-showPage("planner");</script>
+showPage("planner");restoreExecutionState();</script>
 
 <script id="mtTaskSummaryScript">(function(){
 function update(){var box=document.getElementById('taskList'),label=document.getElementById('plannerTaskCount');if(!box||!label)return;var rows=box.querySelectorAll('.task');var count=rows.length;var mins=0;rows.forEach(function(row){var text=row.innerText||'';var matches=text.match(/(\d+)\s*min/gi)||[];if(matches.length)mins+=Number(matches[0].match(/\d+/)[0]);});label.textContent=count+(count===1?' tarefa':' tarefas')+' · '+mins+' min';}
