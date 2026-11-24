@@ -431,11 +431,21 @@ header,.home-intro{background:#424448;box-shadow:none}
 @media(max-width:520px){.time-reward-bar{margin:0 10px 10px;padding:9px 11px;gap:9px}.time-reward-glasses{font-size:19px;gap:3px;min-width:67px}.time-reward-label{font-size:9px;letter-spacing:1.2px}.time-reward-label strong{font-size:17px}.time-reward-hint{display:none}}
 
 
-/* Atualizações: gráfico de pizza, ideias e recompensas */
-.time-donut:after{display:none!important}
-.pie-total-label{text-align:center;margin-top:8px;color:var(--mt-muted);font-size:12px}
-.pie-total-label strong{font-size:17px;color:var(--mt-text)}
-.time-chart-wrap>div:first-child{display:flex;flex-direction:column;align-items:center}
+/* Histórico: distribuição do tempo em barras horizontais */
+.time-chart-wrap{display:block}
+.time-chart-wrap>div:first-child{display:block}
+.time-chart-summary{margin:0 0 20px;padding:0 0 16px;border-bottom:1px solid var(--mt-line)}
+.time-chart-summary strong{display:block;font-size:30px;line-height:1.15;letter-spacing:-.7px;color:var(--mt-text);font-weight:800;font-variant-numeric:tabular-nums}
+.time-chart-summary span{display:block;margin-top:5px;color:var(--mt-muted);font-size:12px}
+.activity-bars{display:grid;gap:17px}
+.activity-row{min-width:0}
+.activity-row-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:7px;font-size:13px;color:var(--mt-text)}
+.activity-row-top span{font-weight:650;overflow-wrap:anywhere;min-width:0}
+.activity-row-top strong{white-space:nowrap;font-weight:800;font-variant-numeric:tabular-nums}
+.activity-track{height:10px;border-radius:30px;background:#eceef0;overflow:hidden}
+.activity-fill{height:100%;min-width:3px;border-radius:30px;background:#8b929b}
+.activity-row:first-child .activity-fill{background:#4389ed}
+.activity-meta{margin-top:5px;color:var(--mt-muted);font-size:11px}
 .reward-use-button{position:relative;z-index:1;padding:8px 11px!important;min-height:34px!important;background:#e8c477!important;color:#34363a!important;font-size:11px!important;font-weight:800!important;white-space:nowrap;box-shadow:none!important}
 .reward-use-button:hover{background:#f2d99e!important;transform:none!important}
 .time-reward-info small{display:block;font-weight:650;white-space:nowrap}
@@ -556,7 +566,10 @@ header,.home-intro{background:#424448;box-shadow:none}
   </section>
   <section class="panel">
    <h2>Tempo distribuído por atividade</h2>
-   <div class="time-chart-wrap"><div><div class="time-donut" id="timeDonut" role="img" aria-label="Gráfico de pizza do tempo distribuído por atividade"></div><div class="pie-total-label"><strong id="donutTotal">0h</strong><small> no período</small></div></div><div class="category-legend" id="categoryLegend"><p class="note">Seus registros por atividade aparecerão aqui.</p></div></div>
+   <div class="time-chart-wrap">
+    <div class="time-chart-summary"><strong id="donutTotal">0 min</strong><span>Tempo total registrado no período</span></div>
+    <div class="activity-bars" id="categoryLegend" aria-label="Tempo por atividade"><p class="note">Seus registros por atividade aparecerão aqui.</p></div>
+   </div>
   </section>
 <section class="panel" style="display:none">
    <h2>Histórico de tarefas concluídas</h2>
@@ -1052,7 +1065,6 @@ function renderTimeDashboard(){
  $("weekEntries").textContent=entries.length;
  $("weekAverage").textContent=days?formatTotal(total/days):"0 min";
  $("donutTotal").textContent=total?formatTotal(total):"0h";
- const colors=chartColors;
  /* Agrupa exclusivamente pelo nome informado da atividade, sem categorias. */
  const groups={};
  entries.forEach(item=>{
@@ -1062,25 +1074,32 @@ function renderTimeDashboard(){
   group.seconds+=entrySeconds(item);group.count++;
   if(Number(item.plannedSeconds)>0)group.planned+=Number(item.plannedSeconds);else group.plannedAll=false;
  });
+ /* Ranking decrescente: primeiro a atividade que mais consumiu tempo. */
  const ranking=Object.values(groups).sort((a,b)=>b.seconds-a.seconds);
- let offset=0;
- const segments=ranking.map((group,i)=>{
-  const start=total?offset/total*100:0;
-  offset+=group.seconds;
-  const end=total?offset/total*100:0;
-  return colors[i%colors.length]+" "+start+"% "+end+"%";
- });
- $("timeDonut").style.background=total?"conic-gradient("+segments.join(",")+")":"#e8edf5";
  const legend=$("categoryLegend");
  legend.innerHTML="";
- if(!ranking.length)legend.innerHTML='<p class="note">Seus registros por atividade aparecerão aqui.</p>';
- ranking.forEach((group,i)=>{
-  const row=document.createElement("div");row.className="legend-row";
-  const dot=document.createElement("span");dot.className="legend-dot";dot.style.background=colors[i%colors.length];
-  const label=document.createElement("span");label.textContent=group.name;
-  const amount=document.createElement("strong");amount.textContent=formatTotal(group.seconds);
-  row.append(dot,label,amount);legend.appendChild(row);
- });
+ if(!ranking.length){
+  legend.innerHTML='<p class="note">Seus registros por atividade aparecerão aqui.</p>';
+ }else{
+  const maxSeconds=ranking[0].seconds||1;
+  ranking.forEach((group,index)=>{
+   const percentage=total>0?(group.seconds/total)*100:0;
+   const row=document.createElement("div");row.className="activity-row";
+   const top=document.createElement("div");top.className="activity-row-top";
+   const label=document.createElement("span");label.textContent=group.name;
+   const amount=document.createElement("strong");amount.textContent=formatTotal(group.seconds);
+   top.append(label,amount);
+   const track=document.createElement("div");track.className="activity-track";
+   track.setAttribute("role","img");
+   track.setAttribute("aria-label",group.name+": "+formatTotal(group.seconds)+", "+percentage.toFixed(1).replace(".",",")+"% do tempo");
+   const fill=document.createElement("div");fill.className="activity-fill";
+   fill.style.width=Math.max(0,Math.min(100,(group.seconds/maxSeconds)*100))+"%";
+   track.appendChild(fill);
+   const meta=document.createElement("div");meta.className="activity-meta";
+   meta.textContent=percentage.toFixed(1).replace(".",",")+"% do tempo no período";
+   row.append(top,track,meta);legend.appendChild(row);
+  });
+ }
 
  syncWeekEvaluation();renderArchivedWeeks();
  const list=$("timeEntriesList");list.innerHTML="";
