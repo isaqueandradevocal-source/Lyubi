@@ -1,7 +1,7 @@
 
 /* LYUBI — SISTEMA OFFLINE */
 
-const CACHE_NAME = "lyubi-v41";
+const CACHE_NAME = "lyubi-v42";
 
 const FILES_TO_CACHE = [
   "./",
