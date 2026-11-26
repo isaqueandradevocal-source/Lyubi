@@ -808,30 +808,6 @@ let timerWakeLock=null;const TIMER_STATE_KEY="lyubiExecutionStateV2";
 let mediaRecorder=null,recordedChunks=[],recordingStream=null,lastBreakMessage="";
 
 const $=id=>document.getElementById(id);
-/* LYUBI — diálogos próprios, sem cabeçalho/identificação do navegador. */
-function lyubiDialog(message,{title="LYUBI",type="alert",defaultValue=""}={}){
- return new Promise(resolve=>{
-  const overlay=document.createElement("div");
-  overlay.style.cssText="position:fixed;inset:0;z-index:100000;background:rgba(0,0,0,.72);display:flex;align-items:center;justify-content:center;padding:18px;";
-  const box=document.createElement("div");
-  box.style.cssText="width:100%;max-width:420px;background:#fff;color:#34363a;border-radius:18px;padding:22px;box-shadow:0 15px 45px rgba(0,0,0,.35);font-family:inherit;";
-  const heading=document.createElement("h3");heading.textContent=title;heading.style.cssText="margin:0 0 12px;font-size:19px;color:#424448;";
-  const body=document.createElement("p");body.textContent=String(message??"");body.style.cssText="white-space:pre-wrap;line-height:1.55;margin:0 0 18px;";
-  box.append(heading,body);
-  let input=null;
-  if(type==="prompt"){input=document.createElement("textarea");input.value=defaultValue??"";input.rows=3;input.style.cssText="width:100%;padding:11px;border:1px solid #c9cbd0;border-radius:10px;font:inherit;resize:vertical;margin:0 0 18px;";box.append(input);}
-  const actions=document.createElement("div");actions.style.cssText="display:flex;gap:9px;justify-content:flex-end;flex-wrap:wrap;";
-  const finish=value=>{overlay.remove();resolve(value);};
-  if(type!=="alert"){const cancel=document.createElement("button");cancel.textContent="Cancelar";cancel.className="secondary";cancel.onclick=()=>finish(type==="prompt"?null:false);actions.append(cancel);}
-  const ok=document.createElement("button");ok.textContent=type==="confirm"?"Confirmar":type==="prompt"?"OK":"Fechar";ok.onclick=()=>finish(type==="prompt"?input.value:true);actions.append(ok);
-  box.append(actions);overlay.append(box);document.body.append(overlay);
-  if(input){input.focus();input.select();}
- });
-}
-function lyubiAlert(message){lyubiDialog(message,{type:"alert"});}
-function lyubiConfirm(message){return lyubiDialog(message,{type:"confirm"});}
-function lyubiPrompt(message,defaultValue=""){return lyubiDialog(message,{type:"prompt",defaultValue});}
-
 
 const activityOptions={
  "Casa":["Varrer a casa","Passar pano","Tirar poeira","Lavar a louça","Organizar um cômodo","Lavar banheiro"],
@@ -921,25 +897,25 @@ function weekOfHistoryEntry(entry){const d=new Date(entry.completedAt);return is
 function getWeekEntries(key){return timeEntries.filter(item=>dateKeyForEntry(item)===key);}
 function syncWeekEvaluation(){const key=$("dashboardWeek")?.value||currentWeekKey();const archived=archivedWeeks[key];$("weekEvaluation").value=archived?String(archived.evaluation||""):String(localStorage.getItem("meuTempoWeekEvaluation_"+key)||"");$("weekEvaluation").disabled=!!archived;$("archiveWeekButton").disabled=!!archived;$("archiveWeekButton").textContent=archived?"Semana arquivada":"Salvar e arquivar semana";$ ("weekArchiveStatus").textContent=archived?"Esta semana já está arquivada. Os registros estão preservados abaixo.":"Ao arquivar, os registros saem da semana ativa, mas ficam guardados para consulta.";}
 // Apaga somente a avaliação, sem regravar os registros ativos nem recriar o arquivo de semanas.
-async function clearWeekEvaluation(){
+function clearWeekEvaluation(){
  const key=$("dashboardWeek")?.value||currentWeekKey();
  const archived=Object.prototype.hasOwnProperty.call(archivedWeeks,key);
  const stored=archived?archivedWeeks[key]?.evaluation:localStorage.getItem("meuTempoWeekEvaluation_"+key);
  if(!String(stored||"").trim()){
-  lyubiAlert("Não há avaliação salva para esta semana.");return;
+  alert("Não há avaliação salva para esta semana.");return;
  }
- if(!await lyubiConfirm("Deseja apagar somente a avaliação da semana "+weekDateRange(key)+"? Os registros de tempo serão mantidos."))return;
+ if(!confirm("Deseja apagar somente a avaliação da semana "+weekDateRange(key)+"? Os registros de tempo serão mantidos."))return;
  if(archived){
   // Preserva todas as propriedades (entries, history e quaisquer campos adicionais).
   const original=localStorage.getItem("meuTempoArchivedWeeks");
-  if(original===null){lyubiAlert("Não foi possível localizar os dados arquivados. Nada foi alterado.");return;}
+  if(original===null){alert("Não foi possível localizar os dados arquivados. Nada foi alterado.");return;}
   try{
    const all=JSON.parse(original);
    if(!all||typeof all!=="object"||!Object.prototype.hasOwnProperty.call(all,key)||!all[key]||typeof all[key]!=="object")throw new Error("Semana não encontrada");
    all[key].evaluation="";
    localStorage.setItem("meuTempoArchivedWeeks",JSON.stringify(all));
    archivedWeeks=all;
-  }catch(error){lyubiAlert("Não foi possível apagar a avaliação com segurança. Os registros não foram modificados.");return;}
+  }catch(error){alert("Não foi possível apagar a avaliação com segurança. Os registros não foram modificados.");return;}
   // Atualiza somente o texto da avaliação no relatório aberto; não fecha nem recria os cartões.
   const item=Array.from($("archivedWeeksList")?.children||[]).find(el=>el.dataset.weekKey===key);
   if(item){
@@ -950,7 +926,7 @@ async function clearWeekEvaluation(){
   localStorage.removeItem("meuTempoWeekEvaluation_"+key);
  }
  syncWeekEvaluation();
- lyubiAlert("Somente a avaliação desta semana foi apagada. Os registros foram mantidos.");
+ alert("Somente a avaliação desta semana foi apagada. Os registros foram mantidos.");
 }
 function buildArchivedWeekReport(key,data){
  const entries=Array.isArray(data.entries)?data.entries:[];
@@ -959,7 +935,7 @@ function buildArchivedWeekReport(key,data){
  return ["LYUBI — RELATÓRIO SEMANAL",weekDateRange(key),"", "Total: "+formatTotal(total),"Registros: "+entries.length,"", "ATIVIDADES",...entries.map(e=>`${e.date} · ${e.activity} · ${formatDuration(entrySeconds(e),true)} (${e.start||"--:--"}–${e.end||"--:--"})`),"", "EXECUÇÃO DA PROGRAMAÇÃO",...history.map(e=>`${new Date(e.completedAt).toLocaleString("pt-BR")} · ${e.name||"Atividade"} · ${statusLabels[e.status]||e.status||"Registrada"} · ${formatDuration(e.actualSeconds||0,true)}`),"", "AVALIAÇÃO",data.evaluation||"Nenhuma avaliação registrada."].join("\n");
 }
 async function copyArchivedWeekReport(key,button){
- const data=archivedWeeks[key];if(!data){lyubiAlert("Semana não encontrada.");return;}
+ const data=archivedWeeks[key];if(!data){alert("Semana não encontrada.");return;}
  const report=buildArchivedWeekReport(key,data);
  try{
   if(navigator.clipboard&&window.isSecureContext){await navigator.clipboard.writeText(report);}
@@ -970,7 +946,7 @@ async function copyArchivedWeekReport(key,button){
   const label=button.textContent;button.textContent="Relatório copiado!";setTimeout(()=>button.textContent=label,2200);
  }catch(error){
   // Alternativa para navegadores que bloqueiam acesso automático à área de transferência.
-  const fallback=window.await lyubiPrompt("Copie o texto do relatório abaixo:",report);
+  const fallback=window.prompt("Copie o texto do relatório abaixo:",report);
   if(fallback===null)return;
  }
 }
@@ -1024,21 +1000,21 @@ function formatTotal(seconds){
  return formatHours(Math.round(total/60));
 }
 
-async function addTimeEntry(){
+function addTimeEntry(){
  const activity=$("timeActivity").value.trim();
  const date=$("timeDate").value;
  const start=$("timeStart").value;
  const end=$("timeEnd").value;
- if(date&&archivedWeeks[isoWeekKey(new Date(date+"T12:00:00"))]){lyubiAlert("Esta semana já foi arquivada. Escolha uma data de uma semana ativa.");return;}
+ if(date&&archivedWeeks[isoWeekKey(new Date(date+"T12:00:00"))]){alert("Esta semana já foi arquivada. Escolha uma data de uma semana ativa.");return;}
  if(!activity||!date||!start||!end){
-  lyubiAlert("Preencha a atividade, a data, o horário de início e o término.");
+  alert("Preencha a atividade, a data, o horário de início e o término.");
   return;
  }
  const startParts=start.split(":").map(Number),endParts=end.split(":").map(Number);
  let startMinutes=startParts[0]*60+startParts[1],endMinutes=endParts[0]*60+endParts[1];
  if(endMinutes<=startMinutes)endMinutes+=24*60;
  const minutes=endMinutes-startMinutes;
- if(minutes<=0||minutes>24*60){lyubiAlert("Confira os horários informados.");return;}
+ if(minutes<=0||minutes>24*60){alert("Confira os horários informados.");return;}
  timeEntries.push({id:String(Date.now())+"-"+Math.random().toString(36).slice(2,8),activity,date,start,end,minutes,createdAt:new Date().toISOString()});
  saveTimeEntries();
  $("timeActivity").value="";
@@ -1047,36 +1023,36 @@ async function addTimeEntry(){
  renderTimeDashboard();
 }
 
-async function deleteTimeEntry(id){
- if(!await lyubiConfirm("Excluir este registro de tempo?"))return;
+function deleteTimeEntry(id){
+ if(!confirm("Excluir este registro de tempo?"))return;
  timeEntries=timeEntries.filter(item=>item.id!==id);
  saveTimeEntries();
  renderTimeDashboard();
 }
 
-async function archiveSelectedWeek(){
- const key=$("dashboardWeek").value||currentWeekKey();if(archivedWeeks[key]){lyubiAlert("Esta semana já está arquivada.");return;}
- if(running&&taskStartedAt&&isoWeekKey(new Date(taskStartedAt))===key){lyubiAlert("Encerre a atividade em andamento antes de arquivar esta semana, para não deixar tempo de fora.");return;}
+function archiveSelectedWeek(){
+ const key=$("dashboardWeek").value||currentWeekKey();if(archivedWeeks[key]){alert("Esta semana já está arquivada.");return;}
+ if(running&&taskStartedAt&&isoWeekKey(new Date(taskStartedAt))===key){alert("Encerre a atividade em andamento antes de arquivar esta semana, para não deixar tempo de fora.");return;}
  const entries=getWeekEntries(key);const history=historyEntries.filter(e=>weekOfHistoryEntry(e)===key);
- if(!entries.length&&!history.length){lyubiAlert("Não há registros nesta semana para arquivar.");return;}
- if(!await lyubiConfirm("Salvar e arquivar a semana "+weekDateRange(key)+"?\n\nOs registros sairão da visualização ativa, mas continuarão guardados para consulta."))return;
+ if(!entries.length&&!history.length){alert("Não há registros nesta semana para arquivar.");return;}
+ if(!confirm("Salvar e arquivar a semana "+weekDateRange(key)+"?\n\nOs registros sairão da visualização ativa, mas continuarão guardados para consulta."))return;
  archivedWeeks[key]={week:key,entries:entries.map(e=>({...e})),history:history.map(e=>({...e})),evaluation:$("weekEvaluation").value.trim(),archivedAt:new Date().toISOString()};
  timeEntries=timeEntries.filter(e=>dateKeyForEntry(e)!==key);historyEntries=historyEntries.filter(e=>weekOfHistoryEntry(e)!==key);
  saveArchivedWeeks();saveTimeEntries();saveHistory();viewingArchivedWeek=null;renderTimeDashboard();renderHistory();
- lyubiAlert("Semana arquivada com segurança. Você pode consultá-la em Semanas arquivadas.");
+ alert("Semana arquivada com segurança. Você pode consultá-la em Semanas arquivadas.");
 }
-async function exportWeekCSV(){
+function exportWeekCSV(){
  const key=$("dashboardWeek").value||currentWeekKey();const data=archivedWeeks[key];const entries=data?data.entries:getWeekEntries(key);
- if(!entries.length){lyubiAlert("Não há registros nessa semana para exportar.");return;}
+ if(!entries.length){alert("Não há registros nessa semana para exportar.");return;}
  const rows=[["Data","Atividade","Início","Término","Duração (segundos)","Status"],...entries.map(e=>[e.date,e.activity,e.start||"",e.end||"",entrySeconds(e),e.status||""])];
  const csv="\uFEFF"+rows.map(row=>row.map(v=>'"'+String(v??"").replace(/"/g,'""')+'"').join(";")).join("\r\n");
  const blob=new Blob([csv],{type:"text/csv;charset=utf-8"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="meu-tempo-"+key+".csv";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
-async function printWeekReport(){
+function printWeekReport(){
  const key=$("dashboardWeek").value||currentWeekKey();const data=archivedWeeks[key];const entries=data?data.entries:getWeekEntries(key);
- if(!entries.length){lyubiAlert("Não há registros nessa semana para gerar relatório.");return;}
+ if(!entries.length){alert("Não há registros nessa semana para gerar relatório.");return;}
  const total=entries.reduce((n,e)=>n+entrySeconds(e),0);const evaluation=data?data.evaluation:$("weekEvaluation").value;
- const w=window.open("","_blank");if(!w){lyubiAlert("Permita a abertura de janelas para gerar o relatório.");return;}
+ const w=window.open("","_blank");if(!w){alert("Permita a abertura de janelas para gerar o relatório.");return;}
  const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
  w.document.write(`<!doctype html><html lang="pt-BR"><meta charset="utf-8"><title>LYUBI - ${esc(key)}</title><style>body{font:14px Arial;margin:35px;color:#222}h1{font-size:22px}table{width:100%;border-collapse:collapse;margin-top:20px}th,td{padding:9px;border-bottom:1px solid #ddd;text-align:left}section{margin-top:25px;white-space:pre-wrap}</style><h1>LYUBI — Relatório semanal</h1><p>${esc(weekDateRange(key))}</p><p><b>${entries.length}</b> registros · <b>${esc(formatTotal(total))}</b> investidos</p><table><thead><tr><th>Data</th><th>Atividade</th><th>Horário</th><th>Duração</th></tr></thead><tbody>${entries.map(e=>`<tr><td>${esc(e.date)}</td><td>${esc(e.activity)}</td><td>${esc(e.start||"")}–${esc(e.end||"")}</td><td>${esc(formatDuration(entrySeconds(e),true))}</td></tr>`).join("")}</tbody></table><section><h2>Minha avaliação</h2>${esc(evaluation||"Nenhuma avaliação registrada.")}</section><script>window.onload=()=>window.print()<\/script></html>`);w.document.close();
 }
@@ -1180,22 +1156,22 @@ function completeInboxTask(id){
  if(!item)return;item.done=!item.done;item.completedAt=item.done?new Date().toISOString():null;
  saveInbox();renderInbox();
 }
-async function moveInboxTaskToPlanner(id){
+function moveInboxTaskToPlanner(id){
  const item=inboxTasks.find(task=>String(task.id)===String(id));
  if(!item||item.done)return;
- if(running){lyubiAlert("Encerre a programação em andamento antes de adicionar uma nova atividade.");return;}
- const answer=await lyubiPrompt("Quantos minutos você pretende dedicar a esta atividade?", "10");
+ if(running){alert("Encerre a programação em andamento antes de adicionar uma nova atividade.");return;}
+ const answer=prompt("Quantos minutos você pretende dedicar a esta atividade?", "10");
  if(answer===null)return;
  const minutes=Number(answer);
- if(!Number.isInteger(minutes)||minutes<1||minutes>600){lyubiAlert("Informe uma duração entre 1 e 600 minutos.");return;}
+ if(!Number.isInteger(minutes)||minutes<1||minutes>600){alert("Informe uma duração entre 1 e 600 minutos.");return;}
  tasks.push({name:item.name,minutes,category:"",recordHistory:true});
  inboxTasks=inboxTasks.filter(task=>String(task.id)!==String(id));
  saveTasks();saveInbox();renderTasks();renderHome();renderInbox();
  showPage("planner");
  const list=$("taskList");if(list)list.lastElementChild?.scrollIntoView({behavior:"smooth",block:"nearest"});
 }
-async function deleteInboxTask(id){
- if(!await lyubiConfirm("Excluir esta tarefa da caixa de entrada?"))return;
+function deleteInboxTask(id){
+ if(!confirm("Excluir esta tarefa da caixa de entrada?"))return;
  inboxTasks=inboxTasks.filter(task=>String(task.id)!==String(id));saveInbox();renderInbox();
 }
 function renderInbox(){
@@ -1383,15 +1359,15 @@ function consumeRewardTime(minutes,label){
  rewardLedger.unshift({date:todayKey(),type:"used",amount:minutes,label:label||"Tempo livre utilizado"});
  saveRewards();updateTimeRewardDisplay();return true;
 }
-async function useRewardBalance(){
- if(running){lyubiAlert("Encerre a execução atual antes de usar o saldo.");return;}
+function useRewardBalance(){
+ if(running){alert("Encerre a execução atual antes de usar o saldo.");return;}
  syncRewardDay();const balance=Number(rewardState.balance)||0;
- if(balance<1){lyubiAlert("Você ainda não tem tempo disponível nas ampulhetas.");return;}
+ if(balance<1){alert("Você ainda não tem tempo disponível nas ampulhetas.");return;}
  const suggested=Math.min(5,balance);
- const answer=await lyubiPrompt("Você tem "+balance+" minuto(s) disponíveis. Quantos deseja usar agora?\n\nDigite um número inteiro de 1 a "+balance+".",String(suggested));
+ const answer=prompt("Você tem "+balance+" minuto(s) disponíveis. Quantos deseja usar agora?\n\nDigite um número inteiro de 1 a "+balance+".",String(suggested));
  if(answer===null)return;
  const minutes=Number(answer);
- if(!Number.isInteger(minutes)||minutes<1||minutes>balance){lyubiAlert("Informe um número inteiro entre 1 e "+balance+".");return;}
+ if(!Number.isInteger(minutes)||minutes<1||minutes>balance){alert("Informe um número inteiro entre 1 e "+balance+".");return;}
  if(!consumeRewardTime(minutes,"Tempo livre iniciado"))return;
  startRewardTimer(minutes);
 }
@@ -1485,23 +1461,23 @@ function setScheduleStatus(message,type=""){
  const el=$("scheduleStatus");el.textContent=message;
  el.style.color=type==="error"?"#b42332":type==="success"?"#18734b":"";
 }
-async function saveSchedule(){
+function saveSchedule(){
  const name=$("scheduleName").value.trim();
- if(!name){lyubiAlert("Dê um nome para esta programação, por exemplo: Quarta-feira.");$("scheduleName").focus();return;}
- if(!tasks.length){lyubiAlert("Adicione pelo menos uma atividade antes de salvar.");return;}
+ if(!name){alert("Dê um nome para esta programação, por exemplo: Quarta-feira.");$("scheduleName").focus();return;}
+ if(!tasks.length){alert("Adicione pelo menos uma atividade antes de salvar.");return;}
  const existing=savedSchedules.findIndex(item=>item.name.toLowerCase()===name.toLowerCase());
  const schedule={name,tasks:tasks.map(task=>({name:String(task.name),minutes:Number(task.minutes),category:task.category||"Outros",recordHistory:true})),breaks:{short:Number($("shortBreak").value)||0,long:Number($("longBreak").value)||0,limit:Number($("breakLimit").value)||15},updatedAt:new Date().toISOString()};
- if(existing>=0){if(!await lyubiConfirm("Já existe uma programação com esse nome. Deseja atualizar a versão salva?"))return;savedSchedules[existing]=schedule;}
+ if(existing>=0){if(!confirm("Já existe uma programação com esse nome. Deseja atualizar a versão salva?"))return;savedSchedules[existing]=schedule;}
  else savedSchedules.push(schedule);
  saveSchedulesStorage();$("savedSchedules").value=String(existing>=0?existing:savedSchedules.length-1);
  setScheduleStatus("Programação “"+name+"” salva com "+tasks.length+" atividades e seus tempos.","success");
 }
-async function loadSchedule(){
+function loadSchedule(){
  const value=$("savedSchedules").value;
- if(value===""||!savedSchedules[Number(value)]){lyubiAlert("Selecione uma programação salva.");return;}
+ if(value===""||!savedSchedules[Number(value)]){alert("Selecione uma programação salva.");return;}
  const schedule=savedSchedules[Number(value)];
- if(running){lyubiAlert("Encerre a execução atual antes de carregar outra programação.");return;}
- if(!await lyubiConfirm("Carregar “"+schedule.name+"” e substituir todas as tarefas da lista atual?\n\nO histórico de atividades concluídas será preservado."))return;
+ if(running){alert("Encerre a execução atual antes de carregar outra programação.");return;}
+ if(!confirm("Carregar “"+schedule.name+"” e substituir todas as tarefas da lista atual?\n\nO histórico de atividades concluídas será preservado."))return;
  tasks=schedule.tasks.map(task=>({name:String(task.name),minutes:Number(task.minutes),category:task.category||"Outros",recordHistory:true}));
  if(schedule.breaks){$("shortBreak").value=Number(schedule.breaks.short)||0;$("longBreak").value=Number(schedule.breaks.long)||0;$("breakLimit").value=Number(schedule.breaks.limit)||15;}
  saveTasks();renderTasks();renderHome();
@@ -1510,7 +1486,7 @@ async function loadSchedule(){
 function localDateKey(date){return date.getFullYear()+"-"+String(date.getMonth()+1).padStart(2,"0")+"-"+String(date.getDate()).padStart(2,"0");}
 function parseLocalDate(key){const p=String(key).split("-").map(Number);return new Date(p[0],p[1]-1,p[2],12);}
 function saveAgendaAssignments(){localStorage.setItem("meuTempoAgenda",JSON.stringify(agendaAssignments));}
-async function offerTodayAgendaTasks(){
+function offerTodayAgendaTasks(){
  const today=todayKey();
  if(localStorage.getItem("meuTempoAgendaPromptDate")===today)return;
  const programs=Array.isArray(agendaAssignments[today])?agendaAssignments[today]:[];
@@ -1520,10 +1496,10 @@ async function offerTodayAgendaTasks(){
  const question=hasCurrent
   ?"Você já tem tarefas na programação de hoje. Deseja adicionar também as tarefas planejadas no calendário?"
   :"Você tem tarefas planejadas no calendário para hoje. Deseja carregá-las na programação?";
- const accepted=await lyubiConfirm(question);
+ const accepted=confirm(question);
  localStorage.setItem("meuTempoAgendaPromptDate",today);
  if(!accepted)return;
- if(running){lyubiAlert("Encerre a execução atual antes de carregar tarefas do calendário.");return;}
+ if(running){alert("Encerre a execução atual antes de carregar tarefas do calendário.");return;}
  const signatures=new Set(tasks.map(task=>String(task.name||"").trim().toLowerCase()+"|"+Number(task.minutes)));
  let added=0;
  planned.forEach(task=>{
@@ -1533,7 +1509,7 @@ async function offerTodayAgendaTasks(){
   if(signatures.has(key))return;
   signatures.add(key);tasks.push(normalized);added++;
  });
- if(added){saveTasks();renderTasks();renderHome();lyubiAlert(added+" tarefa(s) do calendário adicionada(s) à programação de hoje.");}
+ if(added){saveTasks();renderTasks();renderHome();alert(added+" tarefa(s) do calendário adicionada(s) à programação de hoje.");}
 }
 
 function setAgendaView(view){agendaView=view;renderAgenda();}
@@ -1574,26 +1550,26 @@ function renderAgenda(){
 }
 function toggleAgendaCreator(show){const box=$("agendaCreator");if(!box)return;box.hidden=!show;if(show){agendaDraftTasks=[];renderAgendaDraftTasks();$("agendaNewName").focus();}}
 function renderAgendaDraftTasks(){const host=$("agendaDraftList");if(!host)return;host.innerHTML="";if(!agendaDraftTasks.length){host.textContent="Nenhuma atividade adicionada.";return;}agendaDraftTasks.forEach((task,index)=>{const row=document.createElement("div");row.className="agenda-draft-item";const label=document.createElement("span");label.textContent=task.name+" · "+task.minutes+" min";const del=document.createElement("button");del.type="button";del.className="danger";del.textContent="Remover";del.onclick=()=>{agendaDraftTasks.splice(index,1);renderAgendaDraftTasks();};row.append(label,del);host.appendChild(row);});}
-async function addAgendaDraftTask(){const name=$("agendaNewTask").value.trim();const minutes=Number($("agendaNewMinutes").value);if(!name){lyubiAlert("Digite o nome da atividade.");return;}if(!Number.isFinite(minutes)||minutes<1){lyubiAlert("Informe uma duração válida em minutos.");return;}agendaDraftTasks.push({name,minutes,recordHistory:$("agendaNewHistory").checked});$("agendaNewTask").value="";$("agendaNewHistory").checked=false;renderAgendaDraftTasks();$("agendaNewTask").focus();}
-async function saveAgendaCreatedProgram(){const name=$("agendaNewName").value.trim();if(!name){lyubiAlert("Dê um nome para a programação.");return;}if(!agendaDraftTasks.length){lyubiAlert("Adicione pelo menos uma atividade.");return;}const snapshot={id:String(Date.now())+"-"+Math.random().toString(36).slice(2,7),name,tasks:agendaDraftTasks.map(t=>({...t})),breaks:{short:Number($("shortBreak").value)||2,long:Number($("longBreak").value)||5,limit:Number($("breakLimit").value)||15},scheduledAt:new Date().toISOString()};if(!Array.isArray(agendaAssignments[agendaSelectedDate]))agendaAssignments[agendaSelectedDate]=[];agendaAssignments[agendaSelectedDate].push(snapshot);saveAgendaAssignments();agendaDraftTasks=[];$("agendaNewName").value="";toggleAgendaCreator(false);renderAgenda();setScheduleStatus("“"+name+"” foi criada e agendada para "+parseLocalDate(agendaSelectedDate).toLocaleDateString("pt-BR")+".","success");}
-async function assignScheduleToDay(){
- const value=$("agendaScheduleSelect").value;if(value===""||!savedSchedules[Number(value)]){lyubiAlert("Salve ou selecione uma programação antes de marcar no calendário.");return;}
+function addAgendaDraftTask(){const name=$("agendaNewTask").value.trim();const minutes=Number($("agendaNewMinutes").value);if(!name){alert("Digite o nome da atividade.");return;}if(!Number.isFinite(minutes)||minutes<1){alert("Informe uma duração válida em minutos.");return;}agendaDraftTasks.push({name,minutes,recordHistory:$("agendaNewHistory").checked});$("agendaNewTask").value="";$("agendaNewHistory").checked=false;renderAgendaDraftTasks();$("agendaNewTask").focus();}
+function saveAgendaCreatedProgram(){const name=$("agendaNewName").value.trim();if(!name){alert("Dê um nome para a programação.");return;}if(!agendaDraftTasks.length){alert("Adicione pelo menos uma atividade.");return;}const snapshot={id:String(Date.now())+"-"+Math.random().toString(36).slice(2,7),name,tasks:agendaDraftTasks.map(t=>({...t})),breaks:{short:Number($("shortBreak").value)||2,long:Number($("longBreak").value)||5,limit:Number($("breakLimit").value)||15},scheduledAt:new Date().toISOString()};if(!Array.isArray(agendaAssignments[agendaSelectedDate]))agendaAssignments[agendaSelectedDate]=[];agendaAssignments[agendaSelectedDate].push(snapshot);saveAgendaAssignments();agendaDraftTasks=[];$("agendaNewName").value="";toggleAgendaCreator(false);renderAgenda();setScheduleStatus("“"+name+"” foi criada e agendada para "+parseLocalDate(agendaSelectedDate).toLocaleDateString("pt-BR")+".","success");}
+function assignScheduleToDay(){
+ const value=$("agendaScheduleSelect").value;if(value===""||!savedSchedules[Number(value)]){alert("Salve ou selecione uma programação antes de marcar no calendário.");return;}
  const model=savedSchedules[Number(value)];const snapshot={id:String(Date.now())+"-"+Math.random().toString(36).slice(2,7),name:model.name,tasks:model.tasks.map(t=>({name:String(t.name),minutes:Number(t.minutes),category:t.category||"Outros",recordHistory:t.recordHistory!==false})),breaks:{...(model.breaks||{short:2,long:5,limit:15})},scheduledAt:new Date().toISOString()};
  if(!Array.isArray(agendaAssignments[agendaSelectedDate]))agendaAssignments[agendaSelectedDate]=[];
  agendaAssignments[agendaSelectedDate].push(snapshot);saveAgendaAssignments();renderAgenda();
  setScheduleStatus("“"+model.name+"” foi programada para "+parseLocalDate(agendaSelectedDate).toLocaleDateString("pt-BR")+".","success");
 }
-async function loadAgendaAssignment(date,index){
- const item=agendaAssignments[date]?.[index];if(!item)return;if(running){lyubiAlert("Encerre a execução atual antes de carregar outra programação.");return;}
- if(!await lyubiConfirm("Carregar “"+item.name+"” para a programação atual? As tarefas atuais serão substituídas; o histórico será preservado."))return;
+function loadAgendaAssignment(date,index){
+ const item=agendaAssignments[date]?.[index];if(!item)return;if(running){alert("Encerre a execução atual antes de carregar outra programação.");return;}
+ if(!confirm("Carregar “"+item.name+"” para a programação atual? As tarefas atuais serão substituídas; o histórico será preservado."))return;
  tasks=(item.tasks||[]).map(t=>({name:String(t.name),minutes:Number(t.minutes),category:t.category||"Outros",recordHistory:t.recordHistory!==false}));
  if(item.breaks){$("shortBreak").value=Number(item.breaks.short)||0;$("longBreak").value=Number(item.breaks.long)||0;$("breakLimit").value=Number(item.breaks.limit)||15;}
  saveTasks();renderTasks();renderHome();setScheduleStatus("Programação “"+item.name+"” carregada a partir da agenda.","success");
 }
-async function removeAgendaAssignment(date,index){if(!await lyubiConfirm("Remover esta programação da agenda? O modelo salvo não será excluído."))return;agendaAssignments[date].splice(index,1);if(!agendaAssignments[date].length)delete agendaAssignments[date];saveAgendaAssignments();renderAgenda();}
+function removeAgendaAssignment(date,index){if(!confirm("Remover esta programação da agenda? O modelo salvo não será excluído."))return;agendaAssignments[date].splice(index,1);if(!agendaAssignments[date].length)delete agendaAssignments[date];saveAgendaAssignments();renderAgenda();}
 
-async function exportSchedules(){
- if(!savedSchedules.length){lyubiAlert("Você ainda não salvou nenhuma programação.");return;}
+function exportSchedules(){
+ if(!savedSchedules.length){alert("Você ainda não salvou nenhuma programação.");return;}
  const data={app:"LYUBI",formatVersion:1,exportedAt:new Date().toISOString(),schedules:savedSchedules};
  const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
  const url=URL.createObjectURL(blob);const a=document.createElement("a");
@@ -1601,7 +1577,7 @@ async function exportSchedules(){
  setTimeout(()=>URL.revokeObjectURL(url),1000);
  setScheduleStatus("Arquivo de programações exportado. Guarde-o para importar em outro momento.","success");
 }
-async function importSchedules(event){
+function importSchedules(event){
  const file=event.target.files&&event.target.files[0];if(!file)return;
  const reader=new FileReader();
  reader.onload=()=>{
@@ -1618,24 +1594,24 @@ async function importSchedules(event){
     });
     return {name:item.name.trim(),tasks:cleanTasks,breaks:item.breaks||{short:2,long:5,limit:15},updatedAt:item.updatedAt||new Date().toISOString()};
    });
-   if(!await lyubiConfirm("Importar "+valid.length+" programação(ões)? Se houver nomes iguais, as versões salvas serão atualizadas."))return;
+   if(!confirm("Importar "+valid.length+" programação(ões)? Se houver nomes iguais, as versões salvas serão atualizadas."))return;
    valid.forEach(item=>{
     const index=savedSchedules.findIndex(old=>old.name.toLowerCase()===item.name.toLowerCase());
     if(index>=0)savedSchedules[index]=item;else savedSchedules.push(item);
    });
    saveSchedulesStorage();
    setScheduleStatus(valid.length+" programação(ões) importada(s). Selecione uma e toque em “Carregar e substituir tarefas” para usá-la.","success");
-  }catch(error){setScheduleStatus("Não foi possível importar: "+error.message,"error");lyubiAlert("Arquivo inválido: "+error.message);}
+  }catch(error){setScheduleStatus("Não foi possível importar: "+error.message,"error");alert("Arquivo inválido: "+error.message);}
   finally{event.target.value="";}
  };
  reader.onerror=()=>{setScheduleStatus("Não foi possível ler o arquivo.","error");event.target.value="";};
  reader.readAsText(file);
 }
-async function deleteSchedule(){
+function deleteSchedule(){
  const value=$("savedSchedules").value;
- if(value===""||!savedSchedules[Number(value)]){lyubiAlert("Selecione uma programação para excluir.");return;}
+ if(value===""||!savedSchedules[Number(value)]){alert("Selecione uma programação para excluir.");return;}
  const schedule=savedSchedules[Number(value)];
- if(!await lyubiConfirm("Excluir a programação salva “"+schedule.name+"”? As tarefas atuais não serão alteradas."))return;
+ if(!confirm("Excluir a programação salva “"+schedule.name+"”? As tarefas atuais não serão alteradas."))return;
  savedSchedules.splice(Number(value),1);saveSchedulesStorage();
  setScheduleStatus("Programação excluída. A lista atual não foi alterada.","success");
 }
@@ -1674,7 +1650,7 @@ function cleanVoiceTaskName(text){
  if(name)name=name.charAt(0).toUpperCase()+name.slice(1);
  return name;
 }
-async function startVoiceCapture(){
+function startVoiceCapture(){
  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
  if(!SR){setVoiceStatus("Este navegador não oferece reconhecimento de voz. Use o ditado do teclado ou outro navegador compatível.","error");return;}
  const button=$("voiceButton");button.disabled=true;
@@ -1688,7 +1664,7 @@ async function startVoiceCapture(){
   $("taskCategory").value=detectVoiceCategory(name);updateActivitySuggestions();
   $("activitySuggestion").value="";$("taskName").value=name;
   if(minutes===null){
-   const answer=await lyubiPrompt("Entendi a atividade: "+name+"\n\nPor quantos minutos você deseja realizá-la?");
+   const answer=prompt("Entendi a atividade: "+name+"\n\nPor quantos minutos você deseja realizá-la?");
    if(answer===null||answer.trim()===""){setVoiceStatus("Atividade reconhecida. Informe a duração e toque em Adicionar atividade.");return;}
    const chosen=Number(answer);
    if(!Number.isInteger(chosen)||chosen<1||chosen>600){setVoiceStatus("A duração precisa estar entre 1 e 600 minutos. Ajuste o campo manualmente.","error");$("taskMinutes").focus();return;}
@@ -1709,36 +1685,36 @@ async function startVoiceCapture(){
  try{recognition.start();}catch(error){button.disabled=false;setVoiceStatus("Não foi possível iniciar o microfone. Tente novamente.","error");}
 }
 
-async function addTask(){
+function addTask(){
  const typedName=$("taskName").value.trim();
  const suggested=$("activitySuggestion").value;
  const name=typedName||suggested;
  const category=$("taskCategory").value;
  const minutes=Number($("taskMinutes").value);
- if(!name){lyubiAlert("Escolha uma sugestão ou escreva o nome da atividade.");$("taskName").focus();return;}
- if(!Number.isInteger(minutes)||minutes<1||minutes>600){lyubiAlert("Informe uma duração entre 1 e 600 minutos.");return;}
+ if(!name){alert("Escolha uma sugestão ou escreva o nome da atividade.");$("taskName").focus();return;}
+ if(!Number.isInteger(minutes)||minutes<1||minutes>600){alert("Informe uma duração entre 1 e 600 minutos.");return;}
  tasks.push({name,minutes,category,recordHistory:true});
  $("taskName").value="";$("activitySuggestion").value="";
  saveTasks();renderTasks();renderHome();$("taskName").focus();
 }
 function moveTask(index,direction){reorderTask(index,index+direction);}
-async function editTask(index){
- const task=tasks[index];const name=await lyubiPrompt("Nome da atividade:",task.name);
+function editTask(index){
+ const task=tasks[index];const name=prompt("Nome da atividade:",task.name);
  if(name===null)return;
- const minutes=await lyubiPrompt("Duração em minutos:",task.minutes);
+ const minutes=prompt("Duração em minutos:",task.minutes);
  if(minutes===null)return;
  const n=Number(minutes);
- if(!name.trim()||!Number.isInteger(n)||n<1||n>600){lyubiAlert("Nome ou duração inválidos.");return;}
+ if(!name.trim()||!Number.isInteger(n)||n<1||n>600){alert("Nome ou duração inválidos.");return;}
  tasks[index]={...task,name:name.trim(),minutes:n,recordHistory:true};
  saveTasks();renderTasks();
 }
-async function deleteTask(index){
- if(!await lyubiConfirm("Excluir esta atividade?"))return;
+function deleteTask(index){
+ if(!confirm("Excluir esta atividade?"))return;
  tasks.splice(index,1);saveTasks();renderTasks();renderHome();
 }
-async function clearTasks(){
+function clearTasks(){
  if(!tasks.length)return;
- if(!await lyubiConfirm("Apagar todas as tarefas?"))return;
+ if(!confirm("Apagar todas as tarefas?"))return;
  tasks=[];saveTasks();renderTasks();renderHome();
 }
 
@@ -2023,7 +1999,7 @@ async function toggleFullscreen(){
 }
 async function toggleRecording(){
  if(mediaRecorder&&mediaRecorder.state==="recording"){mediaRecorder.stop();return;}
- if(!navigator.mediaDevices||!navigator.mediaDevices.getDisplayMedia){lyubiAlert("A gravação de tela não está disponível neste navegador.");return;}
+ if(!navigator.mediaDevices||!navigator.mediaDevices.getDisplayMedia){alert("A gravação de tela não está disponível neste navegador.");return;}
  try{
   recordingStream=await navigator.mediaDevices.getDisplayMedia({video:{frameRate:30},audio:false});
   recordedChunks=[];
@@ -2044,7 +2020,7 @@ async function toggleRecording(){
   $("recordStatus").textContent="Gravação cancelada ou não autorizada.";console.log("Gravação:",error);
  }
 }
-async function finishProgram(completed=false){
+function finishProgram(completed=false){
  const wasRewardOnly=rewardOnly;
  clearInterval(timer);timer=null;localStorage.removeItem(TIMER_STATE_KEY);releaseTimerWakeLock();
  if(rewardOnly&&!completed){
@@ -2062,7 +2038,7 @@ async function finishProgram(completed=false){
  $("progressPercent").textContent="0% concluído";$("nextTask").textContent="A seguir: --";
  $("realClock").textContent="00:00";$("realBox").classList.remove("paused");
  if(document.fullscreenElement)document.exitFullscreen().catch(()=>{});
- if(completed){playSound();lyubiAlert(wasRewardOnly?"Seu tempo livre terminou. Aproveite!":"Parabéns! Você concluiu sua programação.");}
+ if(completed){playSound();alert(wasRewardOnly?"Seu tempo livre terminou. Aproveite!":"Parabéns! Você concluiu sua programação.");}
 }
 document.addEventListener("fullscreenchange",()=>{
  $("exitFullscreen").textContent=document.fullscreenElement?"Sair da tela cheia":"Ativar tela cheia";
