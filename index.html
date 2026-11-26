@@ -1775,14 +1775,92 @@ function handleTaskTimerExpired(){
  $("status").textContent="O tempo planejado terminou. Escolha como deseja continuar.";
  $("timeDecisionModal").hidden=false;updatePauseButton();updateClock();saveExecutionState();
 }
+ 
 function finishCurrentTaskNow(){
  if(!awaitingTimeDecision)return;
- $("timeDecisionModal").hidden=true;awaitingTimeDecision=false;paused=false;
- const reward=recordCompletedTask();addRewardTime(reward,tasks[currentIndex]?.name||"tarefa concluída");
- const useNow=confirm("Tarefa concluída! Você conquistou "+reward+" minuto"+(reward===1?"":"s")+" de recompensa.\n\nOK: aproveitar a pausa agora.\nCancelar: guardar nas ampulhetas.");
- if(useNow)startBreak(reward,true);
- else{currentIndex++;if(currentIndex>=tasks.length)finishProgram(true);else startTask();}
+
+ $("timeDecisionModal").hidden=true;
+ awaitingTimeDecision=false;
+ paused=false;
+
+ const reward=recordCompletedTask();
+ addRewardTime(reward,tasks[currentIndex]?.name||"tarefa concluída");
+
+ // Criar janela personalizada do LYUBI
+ const overlay=document.createElement("div");
+ overlay.style.cssText=`
+  position:fixed;
+  inset:0;
+  z-index:99999;
+  background:rgba(0,0,0,.78);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+ `;
+
+ const modal=document.createElement("div");
+ modal.style.cssText=`
+  width:100%;
+  max-width:420px;
+  background:#172033;
+  color:#fff;
+  border-radius:22px;
+  padding:28px 24px;
+  box-shadow:0 15px 50px rgba(0,0,0,.5);
+  font-family:inherit;
+ `;
+
+ const title=document.createElement("h2");
+ title.textContent="Tarefa concluída!";
+ title.style.cssText="margin:0 0 16px;font-size:23px;";
+
+ const message=document.createElement("p");
+ message.textContent="Você conquistou "+reward+
+  " minuto"+(reward===1?"":"s")+" de recompensa.";
+ message.style.cssText="font-size:17px;line-height:1.5;margin-bottom:26px;";
+
+ const buttons=document.createElement("div");
+ buttons.style.cssText="display:flex;flex-direction:column;gap:12px;";
+
+ const useButton=document.createElement("button");
+ useButton.textContent="Aproveitar pausa agora";
+ useButton.style.cssText=`
+  padding:15px;border:0;border-radius:12px;
+  background:#d6ad55;color:#172033;
+  font-size:16px;font-weight:bold;cursor:pointer;
+ `;
+
+ const saveButton=document.createElement("button");
+ saveButton.textContent="Guardar nas ampulhetas";
+ saveButton.style.cssText=`
+  padding:15px;border:1px solid #53617a;
+  border-radius:12px;background:transparent;
+  color:#fff;font-size:16px;cursor:pointer;
+ `;
+
+ function closeModal(){
+  overlay.remove();
+ }
+
+ useButton.onclick=()=>{
+  closeModal();
+  startBreak(reward,true);
+ };
+
+ saveButton.onclick=()=>{
+  closeModal();
+  currentIndex++;
+  if(currentIndex>=tasks.length)finishProgram(true);
+  else startTask();
+ };
+
+ buttons.append(useButton,saveButton);
+ modal.append(title,message,buttons);
+ overlay.appendChild(modal);
+ document.body.appendChild(overlay);
 }
+
 function extendCurrentTask(minutes){
  if(!awaitingTimeDecision||![5,10,15].includes(Number(minutes)))return;
  $("timeDecisionModal").hidden=true;awaitingTimeDecision=false;paused=false;
