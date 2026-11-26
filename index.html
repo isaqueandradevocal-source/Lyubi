@@ -1725,9 +1725,48 @@ function getBreakMessage(){
  const message=options[Math.floor(Math.random()*options.length)];
  lastBreakMessage=message;return message;
 }
+function showLyubiConfirm(message){
+ return new Promise(resolve=>{
+  const modal=document.createElement("div");
+  modal.style.cssText="position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.78);display:flex;align-items:center;justify-content:center;padding:20px;";
+
+  const box=document.createElement("div");
+  box.style.cssText="background:#172033;color:white;padding:25px;border-radius:20px;width:100%;max-width:380px;font-family:inherit;";
+
+  const title=document.createElement("h3");
+  title.textContent="LYUBI";
+
+  const text=document.createElement("p");
+  text.textContent=message;
+  text.style.cssText="font-size:17px;line-height:1.5;margin:20px 0;";
+
+  const buttons=document.createElement("div");
+  buttons.style.cssText="display:flex;justify-content:flex-end;gap:12px;";
+
+  function button(label,value){
+   const b=document.createElement("button");
+   b.textContent=label;
+   b.style.cssText="padding:12px 18px;border:0;border-radius:10px;background:#d6ad55;color:#172033;font-weight:bold;cursor:pointer;";
+   b.onclick=()=>{
+    modal.remove();
+    resolve(value);
+   };
+   return b;
+  }
+
+  buttons.append(
+   button("Cancelar",false),
+   button("Começar",true)
+  );
+
+  box.append(title,text,buttons);
+  modal.append(box);
+  document.body.append(modal);
+ });
+}  
 async function startProgram(){
  if(!tasks.length)return;
- if(!confirm("Preparado para começar sua programação?"))return;
+ if(!await showLyubiConfirm("Preparado para começar sua programação?"))return;
  currentIndex=0;running=true;paused=false;inBreak=false;taskElapsedMs=0;taskStartedAt=0;taskActiveStartedAt=0;
  $("execution").classList.add("active");$("startButton").disabled=true;
  try{
