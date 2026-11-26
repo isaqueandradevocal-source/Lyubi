@@ -484,6 +484,51 @@ header,.home-intro{background:#424448;box-shadow:none}
  .time-decision-card{padding:20px}
 }
 
+
+/* Personalização visual LYUBI — camada independente das funções do app */
+:root{--lyubi-accent:#424448;--lyubi-accent-dark:#303236;--lyubi-space:22px}
+body{background:var(--lyubi-accent)!important}
+header,.home-intro,#execution,#execution:fullscreen,#plannerPage .planner-panel{background:var(--lyubi-accent)!important}
+button:not(.secondary):not(.danger):not(.exec-buttons button){background:var(--lyubi-accent)}
+button:not(.secondary):not(.danger):not(.exec-buttons button):hover:not(:disabled){background:var(--lyubi-accent-dark)}
+.page-nav button.active{background:var(--lyubi-accent)!important;border-color:var(--lyubi-accent)!important}
+@media(max-width:600px){.page-nav{background:var(--lyubi-accent)!important}}
+#appearanceToggle{background:rgba(255,255,255,.14);color:#fff;border:1px solid rgba(255,255,255,.22);padding:8px 12px;font-size:12px;border-radius:10px;margin:12px 0 0}
+#appearancePanel{margin:12px 0 2px;padding:14px;background:rgba(255,255,255,.97);color:#34363a;border-radius:14px;border:1px solid rgba(255,255,255,.3);box-shadow:0 8px 24px rgba(0,0,0,.12)}
+#appearancePanel[hidden]{display:none!important}
+.appearance-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+.appearance-heading strong{font-size:14px}
+.appearance-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.appearance-control{display:flex;flex-direction:column;gap:5px;min-width:0;font-size:11px;font-weight:700;color:#56595f}
+.appearance-control select{min-height:38px;padding:7px 9px;font-size:13px}
+.appearance-color-row{display:flex;align-items:center;gap:8px}
+.appearance-color-row input[type=color]{width:42px;min-height:38px;padding:3px;border-radius:9px}
+#appearanceReset{margin-top:12px;padding:8px 11px;font-size:12px;background:#e9eaed;color:#34363a}
+.appearance-help{font-size:11px;color:#71747a;margin:9px 0 0;line-height:1.4}
+body[data-layout="compact"] main{max-width:820px;padding-top:16px}
+body[data-layout="compact"] .panel{padding:16px;margin-bottom:11px;border-radius:13px}
+body[data-layout="compact"] .home-intro{padding:21px;margin-bottom:12px}
+body[data-layout="spacious"] main{max-width:1040px;padding-top:30px}
+body[data-layout="spacious"] .panel{padding:28px;margin-bottom:23px;border-radius:21px}
+body[data-layout="spacious"] .home-intro{padding:38px;margin-bottom:23px}
+body[data-style="minimal"] .panel{box-shadow:none;border-radius:12px}
+body[data-style="minimal"] button{box-shadow:none!important}
+body[data-style="modern"] .panel{box-shadow:0 8px 26px rgba(0,0,0,.09);border-radius:20px}
+body[data-style="illustrated"] .panel{border-radius:22px;box-shadow:0 8px 24px rgba(0,0,0,.1);border-width:2px}
+body[data-style="illustrated"] .home-intro{border-radius:26px}
+body[data-mode="dark"]{--mt-card:#24272b;--mt-text:#eef0f2;--mt-muted:#b2b7bf;--mt-line:#41464d;background:#171a1e!important;color:#eef0f2}
+body[data-mode="dark"] .panel,body[data-mode="dark"] .home-stat,body[data-mode="dark"] .history-stat,body[data-mode="dark"] .dash-card,body[data-mode="dark"] .history-entry,body[data-mode="dark"] .archive-item,body[data-mode="dark"] .agenda-selected,body[data-mode="dark"] .planner-details,body[data-mode="dark"] .planner-details[open],body[data-mode="dark"] .agenda-wrap{background:#24272b!important;color:#eef0f2;border-color:#41464d}
+body[data-mode="dark"] .panel h2,body[data-mode="dark"] .taskname,body[data-mode="dark"] .home-stat strong,body[data-mode="dark"] .history-stat strong,body[data-mode="dark"] .dash-card strong,body[data-mode="dark"] .history-entry-title,body[data-mode="dark"] .time-entry-name,body[data-mode="dark"] .history-date,body[data-mode="dark"] .planner-details summary,body[data-mode="dark"] .planner-details label{color:#eef0f2}
+body[data-mode="dark"] input,body[data-mode="dark"] select,body[data-mode="dark"] textarea{background:#30343a!important;color:#f4f5f6!important;border-color:#555b64}
+body[data-mode="dark"] .planner-form,body[data-mode="dark"] #plannerPage .task{background:#30343a}
+body[data-mode="dark"] .agenda-day,body[data-mode="dark"] .agenda-creator,body[data-mode="dark"] .agenda-selected,body[data-mode="dark"] .dash-empty,body[data-mode="dark"] .history-empty{background:#30343a!important;color:#eef0f2;border-color:#555b64}
+body[data-mode="dark"] .time-decision-card{background:#24272b;color:#eef0f2}
+body[data-mode="dark"] .time-decision-card p{color:#b2b7bf}
+body[data-mode="dark"] .time-donut:after{background:#24272b}
+body[data-mode="dark"] .time-chart-summary strong,body[data-mode="dark"] .activity-row-top,body[data-mode="dark"] .activity-row-top strong,body[data-mode="dark"] .legend-row,body[data-mode="dark"] .legend-row strong{color:#eef0f2}
+body[data-mode="dark"] .inbox-task-text{color:#eef0f2}
+@media(max-width:600px){.appearance-grid{grid-template-columns:1fr 1fr}#appearancePanel{margin-bottom:8px}}
+
 </style>
 </head>
 <body>
@@ -491,6 +536,31 @@ header,.home-intro{background:#424448;box-shadow:none}
 <header>
  <div class="time-reward-bar" id="timeRewardBar" aria-live="polite"><div class="time-reward-glasses" id="timeRewardGlasses"><span>⌛</span><span>⌛</span><span>⌛</span></div><div class="time-reward-info"><div class="time-reward-label">TEMPO CONQUISTADO</div><strong id="timeRewardTotal">0 minutos</strong><small id="rewardBalanceLabel" style="color:#e8c477;font-size:11px">Saldo disponível: 0 min</small></div><span class="time-reward-hint" id="timeRewardHint">Conclua tarefas e conquiste tempo livre</span><button type="button" class="reward-use-button" onclick="useRewardBalance()">Usar saldo</button></div>
  <nav class="page-nav" aria-label="Navegação principal"><button type="button" id="plannerTab" class="active" onclick="showPage('planner')">Início</button><button type="button" id="inboxTab" onclick="showPage('inbox')" aria-label="Ideias"><svg viewBox="0 0 64 74" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M32 9C18.8 9 8.5 19.4 8.5 32.3c0 8.4 3.8 14.8 9.2 20.1 2.4 2.4 3.3 4.6 3.3 8.2h22c0-3.6.9-5.8 3.3-8.2 5.4-5.3 9.2-11.7 9.2-20.1C55.5 19.4 45.2 9 32 9Z"/><path d="M21 60.6h22M21.5 64.5l21-1.8M22.5 68.2l19-1.7M26 71.5h12"/><path d="M32 2v4M10.5 9.5l4.2 4.2M2 32h4M53.5 13.7l4.2-4.2M58 32h4M10.5 54.5l4.2-4.2M53.5 50.3l4.2 4.2"/></g></svg>Ideias<span id="inboxCount" class="inbox-count">0</span></button><button type="button" id="homeTab" onclick="showPage('home')">Histórico</button></nav>
+
+ <button type="button" id="appearanceToggle" aria-expanded="false" aria-controls="appearancePanel">Aparência</button>
+ <section id="appearancePanel" hidden aria-label="Personalizar aparência">
+  <div class="appearance-heading"><strong>Personalize o LYUBI</strong><span style="font-size:11px;color:#71747a">As mudanças são salvas neste dispositivo</span></div>
+  <div class="appearance-grid">
+   <label class="appearance-control">Cor principal
+    <select id="appearanceColor"><option value="#424448">Grafite</option><option value="#315d82">Azul</option><option value="#39745d">Verde</option><option value="#67558c">Violeta</option><option value="#a65d49">Terracota</option><option value="#202326">Preto</option><option value="custom">Personalizada</option></select>
+   </label>
+   <label class="appearance-control">Modo
+    <select id="appearanceMode"><option value="light">Claro</option><option value="dark">Escuro</option></select>
+   </label>
+   <label class="appearance-control">Estilo
+    <select id="appearanceStyle"><option value="modern">Moderno</option><option value="minimal">Minimalista</option><option value="illustrated">Ilustrado</option></select>
+   </label>
+   <label class="appearance-control">Espaçamento
+    <select id="appearanceLayout"><option value="balanced">Equilibrado</option><option value="compact">Compacto</option><option value="spacious">Espaçoso</option></select>
+   </label>
+   <label class="appearance-control">Escolher outra cor
+    <span class="appearance-color-row"><input id="appearanceCustomColor" type="color" value="#424448" aria-label="Escolher cor personalizada"><span style="font-weight:500">Cor livre</span></span>
+   </label>
+  </div>
+  <button type="button" id="appearanceReset">Restaurar aparência original</button>
+  <p class="appearance-help">A personalização altera somente a apresentação. Suas tarefas, registros e programações permanecem preservados.</p>
+ </section>
+
 </header>
 
 <section id="inboxPage" class="hidden-page">
@@ -2118,4 +2188,41 @@ if(!running)offerTodayAgendaTasks();</script>
 function update(){var box=document.getElementById('taskList'),label=document.getElementById('plannerTaskCount');if(!box||!label)return;var rows=box.querySelectorAll('.task');var count=rows.length;var mins=0;rows.forEach(function(row){var text=row.innerText||'';var matches=text.match(/(\d+)\s*min/gi)||[];if(matches.length)mins+=Number(matches[0].match(/\d+/)[0]);});label.textContent=count+(count===1?' tarefa':' tarefas')+' · '+mins+' min';}
 function init(){var box=document.getElementById('taskList');if(!box)return;new MutationObserver(update).observe(box,{childList:true,subtree:true,characterData:true});update();}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
-})();</script></body></html>
+})();</script>
+<script id="lyubiAppearanceScript">
+(function(){
+ const $=id=>document.getElementById(id);
+ const defaults={color:"#424448",mode:"light",style:"modern",layout:"balanced"};
+ const controls={color:$("appearanceColor"),mode:$("appearanceMode"),style:$("appearanceStyle"),layout:$("appearanceLayout"),custom:$("appearanceCustomColor")};
+ function apply(p){
+  const color=p.color||defaults.color;
+  const dark=colorDark(color);
+  document.documentElement.style.setProperty("--lyubi-accent",color);
+  document.documentElement.style.setProperty("--lyubi-accent-dark",dark);
+  document.body.dataset.mode=p.mode||defaults.mode;
+  document.body.dataset.style=p.style||defaults.style;
+  document.body.dataset.layout=p.layout||defaults.layout;
+  const preset=["#424448","#315d82","#39745d","#67558c","#a65d49","#202326"];
+  controls.color.value=preset.includes(color.toLowerCase())?color:"custom";
+  controls.mode.value=p.mode||defaults.mode;
+  controls.style.value=p.style||defaults.style;
+  controls.layout.value=p.layout||defaults.layout;
+  controls.custom.value=color;
+  const meta=document.querySelector('meta[name="theme-color"]');
+  if(meta)meta.setAttribute("content",color);
+ }
+ function colorDark(hex){
+  const n=parseInt(hex.replace("#",""),16),r=(n>>16)&255,g=(n>>8)&255,b=n&255;
+  return "#"+[r,g,b].map(v=>Math.max(0,Math.round(v*.78)).toString(16).padStart(2,"0")).join("");
+ }
+ function current(){return {color:controls.color.value==="custom"?controls.custom.value:controls.color.value,mode:controls.mode.value,style:controls.style.value,layout:controls.layout.value};}
+ function save(){const p=current();apply(p);try{localStorage.setItem("lyubiAppearanceV1",JSON.stringify(p));}catch(e){}}
+ let saved={...defaults};try{saved={...saved,...JSON.parse(localStorage.getItem("lyubiAppearanceV1")||"{}")};}catch(e){}
+ apply(saved);
+ $("appearanceToggle").addEventListener("click",()=>{const panel=$("appearancePanel"),open=panel.hidden;panel.hidden=!open;$("appearanceToggle").setAttribute("aria-expanded",String(open));});
+ Object.values(controls).forEach(el=>el.addEventListener("input",save));
+ $("appearanceReset").addEventListener("click",()=>{try{localStorage.removeItem("lyubiAppearanceV1");}catch(e){}apply(defaults);});
+})();
+</script>
+
+</body></html>
