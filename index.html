@@ -484,6 +484,54 @@ header,.home-intro{background:#424448;box-shadow:none}
  .time-decision-card{padding:20px}
 }
 
+
+/* LYUBI — reorganização minimalista: foco no essencial */
+:root{--mt-bg:#f4f5f2;--mt-navy:#f4f5f2;--mt-blue:#526d59;--mt-blue-dark:#405747;--mt-card:#fff;--mt-text:#29312b;--mt-muted:#747c75;--mt-line:#e8ebe6;--mt-shadow:none;--mt-grafite-card:#f2f4f0}
+html{scroll-behavior:smooth}body{background:#f4f5f2;color:#29312b}
+header{background:#f4f5f2;color:#29312b;padding:12px max(16px,calc((100% - 860px)/2)) 8px;box-shadow:none}
+main{max-width:860px;padding:18px 18px 38px}
+.panel{border:0;border-radius:16px;padding:20px;margin-bottom:12px;box-shadow:none}
+.page-nav{gap:5px;margin-top:8px;padding:4px;background:#e9ece7;border-radius:13px}
+.page-nav button{flex:1;min-width:0;padding:10px 12px;background:transparent;color:#687169;border:0;border-radius:10px;font-size:13px}
+.page-nav button:hover:not(:disabled){background:#e0e5de;color:#29312b}
+.page-nav button.active{background:#fff;color:#29312b;border:0;box-shadow:0 1px 4px rgba(30,40,30,.07)}
+.page-nav svg{width:15px;height:15px;vertical-align:middle;margin-right:5px}
+.time-reward-bar{background:#fff!important;color:#344038!important;border:0!important;border-radius:14px!important;box-shadow:none!important;padding:10px 14px!important}
+.time-reward-label,.time-reward-info strong{color:#344038!important}.time-reward-hint{color:#7b847c!important}
+.home-intro{background:#fff;color:#29312b;border-radius:16px;padding:22px;margin-bottom:12px;box-shadow:none}
+.home-intro h2{color:#29312b;font-size:23px}.home-intro p{color:#747c75}
+.planner-panel{background:#fff;color:#29312b;border-radius:16px;padding:20px}
+#plannerPage .planner-panel h2,#plannerPage .planner-list-heading,#plannerPage .planner-list-heading span{color:#29312b}
+.planner-form{background:#f5f7f3;color:#29312b;border:0;border-radius:13px;padding:14px}
+.planner-form .field-label,.planner-form label{color:#566158}
+.planner-form .voice-area{background:#fff;border:1px solid #e8ebe6;color:#566158}
+.planner-form .voice-status{color:#747c75}
+#plannerPage .planner-task-scroll{border-top:1px solid #e8ebe6}
+#plannerPage .task{background:#f7f8f6;color:#29312b;border:0;border-radius:10px;padding:9px 10px;margin-bottom:6px}
+#plannerPage .task:hover{background:#eef2ec}
+#plannerPage .taskname{color:#29312b;font-size:13px}
+#plannerPage .task small{color:#747c75}
+#plannerPage .task .task-icon-button{color:#566158}
+#plannerPage .task .task-icon-button:hover{background:#e8ece6}
+#plannerPage #startButton{background:#526d59;color:#fff;border-radius:12px;box-shadow:none}
+#plannerPage #startButton:hover:not(:disabled){background:#405747;color:#fff}
+button{border-radius:10px;box-shadow:none}button:hover:not(:disabled){transform:none;box-shadow:none}
+button.secondary{background:#eef1ec;color:#3c493e}
+input,select,textarea{border-color:#e0e5df;border-radius:10px}
+input:focus,select:focus{border-color:#829786;box-shadow:0 0 0 3px rgba(82,109,89,.10)}
+.planner-details,.lyubi-collapsible{background:#fff;border:0;border-radius:15px;padding:17px 19px;box-shadow:none}
+.planner-details summary,.lyubi-collapsible summary{cursor:pointer;list-style:none;font-weight:700;color:#354239;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.planner-details summary::-webkit-details-marker,.lyubi-collapsible summary::-webkit-details-marker{display:none}
+.planner-details summary:after,.lyubi-collapsible summary:after{content:"＋";color:#78847a;font-size:17px;font-weight:400}
+.planner-details[open] summary:after,.lyubi-collapsible[open] summary:after{content:"−"}
+.lyubi-collapsible[open] summary{margin-bottom:16px}
+#homePage .dashboard-grid{gap:8px}
+#homePage .dash-card,#homePage .history-stat{background:#f6f7f4;border:0;border-radius:12px}
+#homePage .week-actions button{min-height:42px}
+#inboxPage .panel{background:#fff}
+#execution{background:#29312b}
+@media(max-width:600px){header{padding:10px 12px 7px}main{padding:13px 12px 30px}.panel,.planner-panel{padding:16px}.time-reward-bar{border-radius:12px!important}.page-nav button{font-size:12px;padding:9px 5px}.home-stats{gap:8px}.lyubi-collapsible{padding:15px}}
+
 </style>
 </head>
 <body>
@@ -554,8 +602,8 @@ header,.home-intro{background:#424448;box-shadow:none}
     <button type="button" class="secondary" id="clearWeekEvaluationButton" onclick="clearWeekEvaluation()">Apagar avaliação</button>
    </div>
   </section>
-  <section class="panel">
-   <h2>Registrar tempo</h2>
+  <details class="panel lyubi-collapsible">
+   <summary>Registrar tempo</summary>
    <p class="note">As atividades feitas pelo cronômetro serão registradas automaticamente, com o tempo real investido, quando você concluir, pular ou encerrar uma tarefa. Use o registro manual apenas para atividades que realizou sem iniciar o cronômetro.</p>
    <div class="time-form">
     <div class="field wide"><label class="field-label" for="timeActivity">O que você fez?</label><input id="timeActivity" placeholder="Ex.: Estudar Pedagogia" autocomplete="off"></div>
@@ -565,14 +613,14 @@ header,.home-intro{background:#424448;box-shadow:none}
     <button type="button" onclick="addTimeEntry()">Salvar registro de tempo</button>
    </div>
    <p class="note" id="timeEntryStatus" aria-live="polite" style="margin-top:10px">A duração será calculada automaticamente pelos horários informados.</p>
-  </section>
-  <section class="panel">
-   <h2>Tempo distribuído por atividade</h2>
+  </details>
+  <details class="panel lyubi-collapsible">
+   <summary>Tempo distribuído por atividade</summary>
    <div class="time-chart-wrap">
     <div class="time-chart-summary"><strong id="donutTotal">0 min</strong><span>Tempo total registrado no período</span></div>
     <div class="activity-bars" id="categoryLegend" aria-label="Tempo por atividade"><p class="note">Seus registros por atividade aparecerão aqui.</p></div>
    </div>
-  </section>
+  </details>
 <section class="panel" style="display:none">
    <h2>Histórico de tarefas concluídas</h2>
    <p class="note">Aqui ficam registradas automaticamente as atividades da sua programação, incluindo as que foram concluídas, puladas ou interrompidas.</p>
@@ -584,19 +632,19 @@ header,.home-intro{background:#424448;box-shadow:none}
    <p id="historyEmpty" class="history-empty">Ainda não há atividades no histórico. Quando você executar uma atividade da programação, o registro será feito automaticamente.</p>
   </section>
   
-  <section class="panel" id="archivedWeeksPanel">
-   <h2>Semanas arquivadas</h2>
+  <details class="panel lyubi-collapsible" id="archivedWeeksPanel">
+   <summary>Semanas arquivadas</summary>
    <p class="note">Consulte avaliações e registros de semanas anteriores. Arquivar não apaga os dados.</p>
    <div id="archivedWeeksList"></div>
    <p id="archivedWeeksEmpty" class="dash-empty">Nenhuma semana arquivada ainda.</p>
-  </section>
+  </details>
   
   
-  <section class="panel">
-   <h2>Registros do período</h2>
+  <details class="panel lyubi-collapsible">
+   <summary>Registros do período</summary>
    <div id="timeEntriesList"></div>
    <p id="timeEntriesEmpty" class="dash-empty">Ainda não há atividades registradas neste período. Inicie uma tarefa pelo cronômetro ou adicione um registro manual.</p>
-  </section>
+  </details>
   
   <section class="panel" style="display:none">
    <h2>Resumo de hoje</h2>
