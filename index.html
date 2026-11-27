@@ -418,7 +418,7 @@ header,.home-intro{background:#424448;box-shadow:none}
 @media(max-width:520px){.agenda-day{min-height:50px;padding:5px 1px}.agenda-add-row{grid-template-columns:1fr}.agenda-add-row button{width:100%}.agenda-assignment{align-items:flex-start;flex-direction:column}}
 
 
-/* Recompensa: ampulhetas que iluminam conforme o tempo é conquistado */
+/* Recompensa: uma ampulheta oficial e saldo de tempo livre acumulado */
 .time-reward-bar{display:flex;align-items:center;justify-content:center;gap:12px;padding:10px 16px;background:linear-gradient(110deg,#252a30,#383b40 58%,#292e34);color:#fff;border:1px solid rgba(224,184,99,.25);border-radius:0 0 15px 15px;margin:0 auto 12px;max-width:560px;font-size:13px;box-shadow:0 5px 16px rgba(0,0,0,.13);position:relative;overflow:hidden}
 .time-reward-bar:before{content:"";position:absolute;inset:0 auto 0 0;width:3px;background:linear-gradient(#f5d98e,#b98535)}
 .time-reward-glasses{display:flex;gap:5px;align-items:center;font-size:22px;min-width:78px}
@@ -430,7 +430,7 @@ header,.home-intro{background:#424448;box-shadow:none}
 .time-reward-label{font-size:10px;letter-spacing:1.5px;font-weight:800;color:#e8c477}.time-reward-label strong{display:block;font-size:19px;line-height:1.15;letter-spacing:0;color:#fff;margin:1px 0 0;font-weight:750;font-variant-numeric:tabular-nums}
 .time-reward-hint{font-size:11px;opacity:.75;margin-left:auto;text-align:right;max-width:155px;line-height:1.3}
 .time-reward-bar.is-earning .time-reward-hint{color:#f0d18d;opacity:1}
-@media(max-width:520px){.time-reward-bar{margin:0 10px 10px;padding:9px 11px;gap:9px}.time-reward-glasses{font-size:19px;gap:3px;min-width:67px}.time-reward-label{font-size:9px;letter-spacing:1.2px}.time-reward-label strong{font-size:17px}.time-reward-hint{display:none}}
+@media(max-width:520px){.time-reward-bar{margin:0 10px 10px;padding:9px 11px;gap:9px}.time-reward-glasses{min-width:44px;width:44px;height:44px}.time-reward-glasses img{width:42px;height:42px}.time-reward-label{font-size:9px;letter-spacing:1.2px}.time-reward-label strong{font-size:17px}.time-reward-hint{display:none}}
 
 
 /* Histórico: distribuição do tempo em barras horizontais */
@@ -577,8 +577,8 @@ main{padding-top:10px!important}
 <body>
 
 <header>
- <div class="time-reward-bar" id="timeRewardBar" aria-live="polite"><div class="time-reward-glasses" id="timeRewardGlasses"><span>⌛</span><span>⌛</span><span>⌛</span></div><div class="time-reward-info"><div class="time-reward-label">TEMPO CONQUISTADO</div><strong id="timeRewardTotal">0 minutos</strong><small id="rewardBalanceLabel" style="color:#e8c477;font-size:11px">Saldo disponível: 0 min</small></div><span class="time-reward-hint" id="timeRewardHint">Conclua tarefas e conquiste tempo livre</span><button type="button" class="reward-use-button" onclick="useRewardBalance()">Usar saldo</button></div>
- <nav class="page-nav" aria-label="Navegação principal"><button type="button" id="plannerTab" class="active" onclick="showPage('planner')">Início</button><button type="button" id="inboxTab" onclick="showPage('inbox')" aria-label="Ideias"><svg viewBox="0 0 64 74" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M32 9C18.8 9 8.5 19.4 8.5 32.3c0 8.4 3.8 14.8 9.2 20.1 2.4 2.4 3.3 4.6 3.3 8.2h22c0-3.6.9-5.8 3.3-8.2 5.4-5.3 9.2-11.7 9.2-20.1C55.5 19.4 45.2 9 32 9Z"/><path d="M21 60.6h22M21.5 64.5l21-1.8M22.5 68.2l19-1.7M26 71.5h12"/><path d="M32 2v4M10.5 9.5l4.2 4.2M2 32h4M53.5 13.7l4.2-4.2M58 32h4M10.5 54.5l4.2-4.2M53.5 50.3l4.2 4.2"/></g></svg>Ideias<span id="inboxCount" class="inbox-count">0</span></button><button type="button" id="homeTab" onclick="showPage('home')">Histórico</button></nav>
+ <div class="time-reward-bar" id="timeRewardBar" aria-live="polite"><div class="time-reward-glasses" id="timeRewardGlasses"><img src="./icons/icon-192.png?v=43" alt="Ampulheta LYUBI"></div><div class="time-reward-info"><div class="time-reward-label">TEMPO CONQUISTADO</div><strong id="timeRewardTotal">0 minutos</strong><small id="rewardBalanceLabel" style="color:#e8c477;font-size:11px">Saldo disponível: 0 min</small></div><span class="time-reward-hint" id="timeRewardHint">Cada tarefa concluída rende 1 minuto livre</span><button type="button" class="reward-use-button" onclick="useRewardBalance()">Usar saldo</button></div>
+ <nav class="page-nav" aria-label="Navegação principal"><button type="button" id="plannerTab" class="active" onclick="showPage('planner')">LYUBI</button><button type="button" id="inboxTab" onclick="showPage('inbox')" aria-label="Ideias"><svg viewBox="0 0 64 74" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M32 9C18.8 9 8.5 19.4 8.5 32.3c0 8.4 3.8 14.8 9.2 20.1 2.4 2.4 3.3 4.6 3.3 8.2h22c0-3.6.9-5.8 3.3-8.2 5.4-5.3 9.2-11.7 9.2-20.1C55.5 19.4 45.2 9 32 9Z"/><path d="M21 60.6h22M21.5 64.5l21-1.8M22.5 68.2l19-1.7M26 71.5h12"/><path d="M32 2v4M10.5 9.5l4.2 4.2M2 32h4M53.5 13.7l4.2-4.2M58 32h4M10.5 54.5l4.2-4.2M53.5 50.3l4.2 4.2"/></g></svg>Ideias<span id="inboxCount" class="inbox-count">0</span></button><button type="button" id="homeTab" onclick="showPage('home')">Histórico</button></nav>
 </header>
 
 <section id="inboxPage" class="hidden-page">
@@ -705,7 +705,7 @@ main{padding-top:10px!important}
 <div id="plannerPage" class="">
  <main>
   <section class="panel planner-panel">
-   <h2>Início</h2>
+   <div class="home-intro"><h2>Bem-vindo!</h2><p>O que gostaria de executar hoje?</p></div>
 
    <div class="planner-form">
     <div class="field planner-hidden-internal">
@@ -1426,11 +1426,11 @@ function saveCurrentTaskTime(status){
  return actualSeconds;
 }
 
-// Recompensas em tempo: o saldo é diário e o histórico permanece salvo.
+// Recompensas em tempo: cada tarefa concluída rende 1 minuto; o saldo acumula entre os dias.
 let rewardState=(()=>{try{return JSON.parse(localStorage.getItem("meuTempoRewards")||"{}");}catch(e){return {};}})();
 let rewardLedger=(()=>{try{const v=JSON.parse(localStorage.getItem("meuTempoRewardLedger")||"[]");return Array.isArray(v)?v:[];}catch(e){return [];}})();
 function saveRewards(){localStorage.setItem("meuTempoRewards",JSON.stringify(rewardState));localStorage.setItem("meuTempoRewardLedger",JSON.stringify(rewardLedger));}
-function syncRewardDay(){const today=todayKey();if(rewardState.date&&rewardState.date!==today&&Number(rewardState.balance)>0){rewardLedger.unshift({date:rewardState.date,type:"expired",amount:Number(rewardState.balance),label:"Tempo de recompensa não utilizado expirou"});}if(rewardState.date!==today){rewardState={date:today,balance:0,earned:0};saveRewards();}}
+function syncRewardDay(){const today=todayKey();if(rewardState.date!==today){rewardState={...rewardState,date:today,balance:Number(rewardState.balance)||0,earned:Number(rewardState.earned)||0};saveRewards();}}
 let lastDisplayedRewardTotal=null;
 function updateTimeRewardDisplay(){
  syncRewardDay();
@@ -1443,14 +1443,11 @@ function updateTimeRewardDisplay(){
  const execTotal=$("execRewardTotal");if(execTotal)execTotal.textContent=balance+" min";
  const hint=$("timeRewardHint");if(hint)hint.textContent=inProgress>0?"Você está conquistando mais tempo agora":"Conclua tarefas e conquiste tempo livre";
  const bar=$("timeRewardBar");if(bar)bar.classList.toggle("is-earning",inProgress>0);
- const icons=$("timeRewardGlasses");if(icons){const active=Math.min(3,total);[...icons.children].forEach((el,i)=>{const wasActive=el.classList.contains("active");el.classList.toggle("active",i<active);if(i<active&&!wasActive&&lastDisplayedRewardTotal!==null){el.classList.remove("reward-pop");void el.offsetWidth;el.classList.add("reward-pop");}});}
+ const icon=$("timeRewardGlasses")?.querySelector("img");if(icon&&lastDisplayedRewardTotal!==null&&total>lastDisplayedRewardTotal){icon.classList.remove("reward-pop");void icon.offsetWidth;icon.classList.add("reward-pop");}
  lastDisplayedRewardTotal=total;
 }
 function rewardMinutesForTask(task){
- const minutes=Math.max(0,Number(task&&task.minutes)||0);
- if(minutes<=15)return 1;
- if(minutes<=25)return 4;
- return 6;
+ return task?1:0;
 }
 function addRewardTime(minutes,taskName){
  syncRewardDay();minutes=Math.max(0,Math.floor(Number(minutes)||0));
@@ -1470,7 +1467,7 @@ function consumeRewardTime(minutes,label){
 function useRewardBalance(){
  if(running){alert("Encerre a execução atual antes de usar o saldo.");return;}
  syncRewardDay();const balance=Number(rewardState.balance)||0;
- if(balance<1){alert("Você ainda não tem tempo disponível nas ampulhetas.");return;}
+ if(balance<1){alert("Você ainda não tem tempo livre conquistado disponível.");return;}
  const suggested=Math.min(5,balance);
  const answer=prompt("Você tem "+balance+" minuto(s) disponíveis. Quantos deseja usar agora?\n\nDigite um número inteiro de 1 a "+balance+".",String(suggested));
  if(answer===null)return;
@@ -1979,7 +1976,7 @@ function finishCurrentTaskNow(){
  `;
 
  const saveButton=document.createElement("button");
- saveButton.textContent="Guardar nas ampulhetas";
+ saveButton.textContent="Guardar tempo conquistado";
  saveButton.style.cssText=`
   padding:15px;border:1px solid #53617a;
   border-radius:12px;background:transparent;
