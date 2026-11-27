@@ -570,6 +570,8 @@ main{padding-top:10px!important}
 .planner-accordion-content .settings input{width:100%;max-width:none;height:36px;padding:5px}
 .planner-accordion-content .note{font-size:11px;line-height:1.45;margin:8px 0}
 
+/* Garantir cores distintas para cada atividade no histórico */
+.activity-fill{background:var(--activity-color,#8b929b)!important}
 </style>
 </head>
 <body>
@@ -1200,7 +1202,7 @@ function renderTimeDashboard(){
    track.setAttribute("role","img");
    track.setAttribute("aria-label",group.name+": "+formatTotal(group.seconds)+", "+percentage.toFixed(1).replace(".",",")+"% do tempo");
    const fill=document.createElement("div");fill.className="activity-fill";
-   fill.style.backgroundColor=["#e76f51","#43a875","#4895d1","#9b72cf","#e2ad42","#d76ca1","#39a6a0","#89b94d","#597fd0","#d18c45","#c35d69","#5ba5bc"][index%12];
+   fill.style.setProperty("--activity-color",["#e76f51","#43a875","#4895d1","#9b72cf","#e2ad42","#d76ca1","#39a6a0","#89b94d","#597fd0","#d18c45","#c35d69","#5ba5bc"][index%12]);
    fill.style.width=Math.max(0,Math.min(100,(group.seconds/maxSeconds)*100))+"%";
    track.appendChild(fill);
    const meta=document.createElement("div");meta.className="activity-meta";
