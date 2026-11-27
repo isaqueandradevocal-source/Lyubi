@@ -521,6 +521,41 @@ main{padding-top:10px!important}
  #plannerPage .task{padding:6px 7px!important}
 }
 
+
+/* Compactação e subabas das ferramentas de programação */
+.planner-tools-tabs{display:flex;gap:6px;margin:0 0 10px}
+.planner-tools-tab{flex:1;min-width:0;padding:8px 9px;font-size:12px;background:#595b5f;color:#fff;border:1px solid #77797e;border-radius:9px}
+.planner-tools-tab.active{background:#fff;color:#424448;box-shadow:2px 3px 6px rgba(0,0,0,.18)}
+.planner-tools-pane[hidden]{display:none!important}
+.planner-tools-pane .settings{display:flex;gap:8px}
+.planner-tools-pane .settings label{flex:1;font-size:11px}
+.planner-tools-pane .settings input{width:100%;height:36px;padding:5px}
+.planner-tools-pane .note{font-size:11px;line-height:1.45;margin:8px 0}
+.planner-tools-pane .actions{gap:6px}
+.planner-tools-pane .actions button{padding:8px 10px;font-size:12px}
+.planner-tools-pane .agenda-wrap{margin-top:10px;padding:10px;border-radius:11px;background:#f4f5f6}
+.planner-tools-pane .agenda-head{gap:7px;margin-bottom:7px}
+.planner-tools-pane .agenda-head button{padding:6px 8px;font-size:11px}
+.planner-tools-pane .agenda-grid{gap:3px}
+.planner-tools-pane .agenda-selected{padding:9px;margin-top:8px}
+.planner-tools-pane .agenda-add-row{gap:6px}
+.planner-tools-pane input,.planner-tools-pane select{min-height:36px;padding:7px;font-size:13px}
+#inboxPage .inbox-row{padding:7px 3px;gap:7px}
+#inboxPage .inbox-task-text{font-size:12px;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+#inboxPage .inbox-icon-btn{width:29px;height:29px;min-width:29px}
+#inboxPage .inbox-row button{flex-shrink:0}
+#inboxPage .panel{padding:14px}
+.activity-fill{background-color:hsl(calc(var(--activity-index,0)*57 + 20),65%,52%)!important}
+.activity-row:nth-child(1) .activity-fill{background:hsl(12,68%,55%)}
+.activity-row:nth-child(2) .activity-fill{background:hsl(135,48%,45%)}
+.activity-row:nth-child(3) .activity-fill{background:hsl(205,65%,52%)}
+.activity-row:nth-child(4) .activity-fill{background:hsl(275,55%,55%)}
+.activity-row:nth-child(5) .activity-fill{background:hsl(42,80%,52%)}
+.activity-row:nth-child(6) .activity-fill{background:hsl(330,60%,52%)}
+.activity-row:nth-child(7) .activity-fill{background:hsl(175,55%,42%)}
+.activity-row:nth-child(8) .activity-fill{background:hsl(95,50%,45%)}
+.activity-row:nth-child(n+9) .activity-fill{background:hsl(calc((var(--activity-index,0)*61)%360),60%,50%)}
+
 </style>
 </head>
 <body>
@@ -706,8 +741,12 @@ main{padding-top:10px!important}
   </section>
 
   <details class="panel planner-details">
-   <summary>Pausas e programações salvas</summary>
-   <p class="note">Salve listas para reutilizar em outros dias.</p>
+   <div class="planner-tools-tabs"><button type="button" class="planner-tools-tab active" onclick="showPlannerTools('pausas')">Pausas</button><button type="button" class="planner-tools-tab" onclick="showPlannerTools('salvas')">Programações salvas e calendário</button></div>
+   <div class="planner-tools-pane" id="plannerToolsPauses"><div class="settings" style="display:none">
+    <label>Pausa curta (min)<br><input id="shortBreak" type="number" min="0" value="2"></label>
+    <label>Pausa longa (min)<br><input id="longBreak" type="number" min="0" value="5"></label>
+    <label>Limite (min)<br><input id="breakLimit" type="number" min="1" value="15"></label>
+   </div><p class="note">A recompensa é liberada somente ao concluir uma tarefa: até 15 min = 1 min; acima de 15 até 25 min = 4 min; acima de 25 min = 6 min. Você escolhe aproveitar a pausa agora ou guardar o tempo nas ampulhetas.</p></div><div class="planner-tools-pane" id="plannerToolsSaved" hidden><p class="note">Salve listas para reutilizar em outros dias.</p>
 
    <div class="field">
     <label class="field-label" for="scheduleName">Nome da programação</label>
@@ -781,14 +820,10 @@ main{padding-top:10px!important}
     <p class="note">Você pode escolher um modelo salvo ou criar uma programação nova diretamente para a data selecionada. A criação direta não altera seus modelos salvos.</p>
    </section>
   
-    <div class="settings" style="display:none">
-    <label>Pausa curta (min)<br><input id="shortBreak" type="number" min="0" value="2"></label>
-    <label>Pausa longa (min)<br><input id="longBreak" type="number" min="0" value="5"></label>
-    <label>Limite (min)<br><input id="breakLimit" type="number" min="1" value="15"></label>
-   </div>
+    
 
    <p class="note">A recompensa é liberada somente ao concluir uma tarefa: até 15 min = 1 min; acima de 15 até 25 min = 4 min; acima de 25 min = 6 min. Você escolhe aproveitar a pausa agora ou guardar o tempo nas ampulhetas.</p>
-  </details>
+  </div></details>
 
   <div class="planner-bottom-actions">
    <button onclick="startProgram()" id="startButton">▶ Começar programação</button>
@@ -2149,7 +2184,15 @@ renderHistory();
 renderHome();
 renderTimeDashboard();
 showPage("planner");restoreExecutionState();
-if(!running)offerTodayAgendaTasks();</script>
+if(!running)offerTodayAgendaTasks();
+function showPlannerTools(which){
+ const pauses=$("plannerToolsPauses"),saved=$("plannerToolsSaved");
+ if(pauses)pauses.hidden=which!=="pausas";
+ if(saved)saved.hidden=which!=="salvas";
+ document.querySelectorAll(".planner-tools-tab").forEach(btn=>btn.classList.toggle("active",btn.textContent.trim().startsWith(which==="pausas"?"Pausas":"Programações")));
+}
+
+</script>
 
 <script id="mtTaskSummaryScript">(function(){
 function update(){var box=document.getElementById('taskList'),label=document.getElementById('plannerTaskCount');if(!box||!label)return;var rows=box.querySelectorAll('.task');var count=rows.length;var mins=0;rows.forEach(function(row){var text=row.innerText||'';var matches=text.match(/(\d+)\s*min/gi)||[];if(matches.length)mins+=Number(matches[0].match(/\d+/)[0]);});label.textContent=count+(count===1?' tarefa':' tarefas')+' · '+mins+' min';}
