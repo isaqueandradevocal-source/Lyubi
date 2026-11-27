@@ -804,8 +804,7 @@ body.theme-light .dash-empty{border-color:#dfe2e6!important}
 <body>
 
 <header>
- <div class="time-reward-bar" id="timeRewardBar" aria-live="polite"><div class="time-reward-glasses" id="timeRewardGlasses"><img src="./icons/icon-192.png?v=43" alt="Ampulheta LYUBI"></div><div class="time-reward-info"><div class="time-reward-label">TEMPO CONQUISTADO</div><strong id="timeRewardTotal">0 minutos</strong><small id="rewardBalanceLabel" style="color:#e8c477;font-size:11px">Saldo disponível: 0 min</small></div><span class="time-reward-hint" id="timeRewardHint">Cada tarefa concluída rende 1 minuto livre</span><button type="button" class="reward-use-button" onclick="useRewardBalance()">Usar saldo</button></div>
- <div class="theme-control"><button type="button" id="themeToggle" class="theme-toggle" onclick="toggleTheme()">Tema claro</button></div>
+ <div class="time-reward-bar" id="timeRewardBar" aria-live="polite"><div class="time-reward-glasses" id="timeRewardGlasses"><img src="./icons/icon-192.png?v=43" alt="Ampulheta"></div><div class="time-reward-info"><span class="time-reward-label">SALDO LIVRE</span><strong id="rewardBalanceLabel">0 min</strong><span id="timeRewardTotal" class="reward-total-hidden" aria-hidden="true">0 minutos</span></div><button type="button" class="reward-use-button" onclick="useRewardBalance()">Usar</button><button type="button" id="themeToggle" class="theme-toggle" onclick="toggleTheme()" aria-label="Alternar tema" title="Alternar tema"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.2 15.3A8.5 8.5 0 0 1 8.7 3.8 8.6 8.6 0 1 0 20.2 15.3Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>
  <nav class="page-nav" aria-label="Navegação principal"><button type="button" id="plannerTab" class="active" onclick="showPage('planner')">LYUBI</button><button type="button" id="inboxTab" onclick="showPage('inbox')" aria-label="Ideias"><svg viewBox="0 0 64 74" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M32 9C18.8 9 8.5 19.4 8.5 32.3c0 8.4 3.8 14.8 9.2 20.1 2.4 2.4 3.3 4.6 3.3 8.2h22c0-3.6.9-5.8 3.3-8.2 5.4-5.3 9.2-11.7 9.2-20.1C55.5 19.4 45.2 9 32 9Z"/><path d="M21 60.6h22M21.5 64.5l21-1.8M22.5 68.2l19-1.7M26 71.5h12"/><path d="M32 2v4M10.5 9.5l4.2 4.2M2 32h4M53.5 13.7l4.2-4.2M58 32h4M10.5 54.5l4.2-4.2M53.5 50.3l4.2 4.2"/></g></svg>Ideias<span id="inboxCount" class="inbox-count">0</span></button><button type="button" id="homeTab" onclick="showPage('home')">Histórico</button></nav>
 </header>
 
@@ -1197,7 +1196,7 @@ function applyTheme(theme){
  const light=theme==="light";
  document.body.classList.toggle("theme-light",light);
  const toggle=document.getElementById("themeToggle");
- if(toggle)toggle.textContent=light?"Tema escuro":"Tema claro";
+ if(toggle){toggle.setAttribute("aria-label",light?"Ativar tema escuro":"Ativar tema claro");toggle.setAttribute("title",light?"Ativar tema escuro":"Ativar tema claro");}
  const meta=document.querySelector('meta[name="theme-color"]');
  if(meta)meta.content=light?"#ffffff":"#424448";
 }
@@ -1453,6 +1452,23 @@ function printWeekReport(){
  #homePage .history-archive-summary{align-items:flex-start;flex-direction:column}
 }
 
+
+/* Cabeçalho compacto: saldo livre e alternância por ícone */
+.time-reward-bar{display:flex;align-items:center;justify-content:flex-start;gap:10px;width:calc(100% - 28px);max-width:620px;min-height:58px;box-sizing:border-box;padding:8px 12px;margin:8px auto 8px;border-radius:14px;background:linear-gradient(110deg,#252a30,#383b40 58%,#292e34);box-shadow:0 3px 12px rgba(0,0,0,.12)}
+.time-reward-glasses{width:34px;height:34px;min-width:34px;display:flex;align-items:center;justify-content:center}
+.time-reward-glasses img{width:32px;height:32px;object-fit:contain}
+.time-reward-info{display:flex;flex-direction:column;gap:1px;min-width:0;flex:1}
+.time-reward-label{font-size:9px;letter-spacing:1.1px;line-height:1.1}
+.time-reward-info #rewardBalanceLabel{display:block;font-size:17px!important;font-weight:800;line-height:1.15;color:#f0cc78!important;white-space:nowrap}
+.reward-total-hidden{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
+.time-reward-hint{display:none!important}
+.time-reward-bar .reward-use-button{margin-left:auto;padding:8px 12px!important;min-height:36px;font-size:12px!important;white-space:nowrap}
+.theme-control{display:none!important}
+.time-reward-bar .theme-toggle{width:36px!important;height:36px!important;min-width:36px!important;padding:7px!important;display:flex!important;align-items:center;justify-content:center;border-radius:50%!important;background:rgba(255,255,255,.1)!important;border:1px solid rgba(255,255,255,.22)!important;color:#fff!important;box-shadow:none!important}
+.time-reward-bar .theme-toggle svg{width:20px;height:20px;display:block}
+body.theme-light .time-reward-bar{background:#fff!important;border:1px solid #e1e3e7!important;box-shadow:0 3px 12px rgba(0,0,0,.06)!important}
+body.theme-light .time-reward-bar .theme-toggle{background:#eef0f2!important;color:#34363a!important;border-color:#d8dce1!important}
+@media(max-width:520px){.time-reward-bar{width:calc(100% - 28px);min-height:54px;padding:7px 10px;gap:9px;margin:7px auto 8px}.time-reward-glasses{width:30px;height:30px;min-width:30px}.time-reward-glasses img{width:29px;height:29px}.time-reward-info #rewardBalanceLabel{font-size:16px!important}.time-reward-bar .reward-use-button{padding:7px 10px!important;min-height:34px}.time-reward-bar .theme-toggle{width:34px!important;height:34px!important;min-width:34px!important}}
 </style><h1>LYUBI — Relatório semanal</h1><p>${esc(weekDateRange(key))}</p><p><b>${entries.length}</b> registros · <b>${esc(formatTotal(total))}</b> investidos</p><table><thead><tr><th>Data</th><th>Atividade</th><th>Horário</th><th>Duração</th></tr></thead><tbody>${entries.map(e=>`<tr><td>${esc(e.date)}</td><td>${esc(e.activity)}</td><td>${esc(e.start||"")}–${esc(e.end||"")}</td><td>${esc(formatDuration(entrySeconds(e),true))}</td></tr>`).join("")}</tbody></table><section><h2>Minha avaliação</h2>${esc(evaluation||"Nenhuma avaliação registrada.")}</section><script>window.onload=()=>window.print()<\/script></html>`);w.document.close();
 }
 
