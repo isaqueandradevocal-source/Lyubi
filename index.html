@@ -757,11 +757,12 @@ main{padding-top:10px!important}
    <h2>Visão geral</h2>
    <label class="field-label" for="dashboardWeek">Período de análise</label>
    <input class="month-filter" id="dashboardWeek" type="week">
-   <div class="dashboard-grid">
-    <div class="dash-card"><small>Tempo registrado na semana</small><strong id="weekTotal">0h</strong><span>Horas acompanhadas</span></div>
-    <div class="dash-card"><small>Registros realizados</small><strong id="weekEntries">0</strong><span>Atividades registradas</span></div>
-    <div class="dash-card"><small>Média por dia registrado</small><strong id="weekAverage">0 min</strong><span>Nos dias com registros</span></div>
+   <div class="dashboard-grid history-overview-grid">
+    <div class="dash-card history-highlight"><small>Tempo investido</small><strong id="weekTotal">0h</strong><span>Total no período</span></div>
+    <div class="dash-card"><small>Atividades realizadas</small><strong id="weekEntries">0</strong><span>Registros no período</span></div>
+    <div class="dash-card"><small>Dias ativos</small><strong id="weekDays">0</strong><span>Dias com execução</span></div>
    </div>
+   <p class="history-average">Média por dia ativo: <strong id="weekAverage">0 min</strong></p>
    <div class="week-actions no-print">
     <button type="button" class="secondary" onclick="exportWeekCSV()">Exportar CSV</button>
     <button type="button" class="secondary" onclick="printWeekReport()">Salvar relatório / PDF</button>
@@ -1281,7 +1282,60 @@ function printWeekReport(){
  const total=entries.reduce((n,e)=>n+entrySeconds(e),0);const evaluation=data?data.evaluation:$("weekEvaluation").value;
  const w=window.open("","_blank");if(!w){alert("Permita a abertura de janelas para gerar o relatório.");return;}
  const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
- w.document.write(`<!doctype html><html lang="pt-BR"><meta charset="utf-8"><title>LYUBI - ${esc(key)}</title><style>body{font:14px Arial;margin:35px;color:#222}h1{font-size:22px}table{width:100%;border-collapse:collapse;margin-top:20px}th,td{padding:9px;border-bottom:1px solid #ddd;text-align:left}section{margin-top:25px;white-space:pre-wrap}</style><h1>LYUBI — Relatório semanal</h1><p>${esc(weekDateRange(key))}</p><p><b>${entries.length}</b> registros · <b>${esc(formatTotal(total))}</b> investidos</p><table><thead><tr><th>Data</th><th>Atividade</th><th>Horário</th><th>Duração</th></tr></thead><tbody>${entries.map(e=>`<tr><td>${esc(e.date)}</td><td>${esc(e.activity)}</td><td>${esc(e.start||"")}–${esc(e.end||"")}</td><td>${esc(formatDuration(entrySeconds(e),true))}</td></tr>`).join("")}</tbody></table><section><h2>Minha avaliação</h2>${esc(evaluation||"Nenhuma avaliação registrada.")}</section><script>window.onload=()=>window.print()<\/script></html>`);w.document.close();
+ w.document.write(`<!doctype html><html lang="pt-BR"><meta charset="utf-8"><title>LYUBI - ${esc(key)}</title><style>body{font:14px Arial;margin:35px;color:#222}h1{font-size:22px}table{width:100%;border-collapse:collapse;margin-top:20px}th,td{padding:9px;border-bottom:1px solid #ddd;text-align:left}section{margin-top:25px;white-space:pre-wrap}
+/* Histórico LYUBI — painel de evolução */
+#homePage .panel{background:#202631;color:#f5f6f8;border:1px solid #3b424d;box-shadow:0 8px 24px rgba(0,0,0,.16)}
+#homePage .panel h2,#homePage .panel h3{color:#fff}
+#homePage .note,#homePage .field-label{color:#c4c9d1}
+#homePage .dashboard-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin:12px 0 6px}
+#homePage .dash-card{background:#2b3441;border:1px solid #46505e;border-radius:15px;padding:14px 12px}
+#homePage .dash-card small{color:#c5cbd4;font-size:11px;line-height:1.35}
+#homePage .dash-card strong{color:#fff;font-size:clamp(21px,5vw,29px)}
+#homePage .dash-card span{color:#b8c0cb;font-size:11px}
+#homePage .history-highlight{border-color:#9c8248;background:linear-gradient(145deg,#3a3b37,#30343a)}
+#homePage .history-highlight strong{color:#f0cc78}
+#homePage .history-average{font-size:12px;color:#bfc5ce;margin:8px 2px 0}
+#homePage .history-average strong{color:#f0cc78}
+#homePage #dashboardWeek,#homePage #weekEvaluation,#homePage .time-form input{background:#171d26;color:#fff;border:1px solid #596270;border-radius:10px}
+#homePage #weekEvaluation::placeholder,#homePage .time-form input::placeholder{color:#8993a1}
+#homePage .time-chart-wrap{grid-template-columns:minmax(0,1fr);gap:14px}
+#homePage .time-chart-summary{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap}
+#homePage .time-chart-summary strong{color:#f0cc78;font-size:24px}
+#homePage .time-chart-summary span{color:#c1c7d0;font-size:12px}
+#homePage .activity-row-top{color:#f4f5f7}
+#homePage .activity-row-top strong{color:#f0cc78}
+#homePage .activity-track{background:#414a57;height:8px}
+#homePage .activity-fill{background:var(--activity-color)}
+#homePage .activity-meta{color:#aeb7c3}
+#homePage .history-day{background:#28313d;border:1px solid #414b59;border-radius:13px;margin:9px 0;overflow:hidden}
+#homePage .history-day-summary{list-style:none;display:flex;justify-content:space-between;align-items:center;gap:10px;padding:13px;cursor:pointer}
+#homePage .history-day-summary::-webkit-details-marker{display:none}
+#homePage .history-day-name{font-size:13px;font-weight:750;color:#fff;text-transform:capitalize}
+#homePage .history-day-meta{font-size:11px;color:#edc66f;text-align:right;white-space:nowrap}
+#homePage .history-day-content{padding:0 12px 7px}
+#homePage .time-entry{border-top:1px solid #414b59;border-bottom:0;padding:11px 2px}
+#homePage .time-entry-name{color:#fff;font-size:13px}
+#homePage .time-entry-meta{color:#aeb7c3}
+#homePage .time-entry-duration{color:#f0cc78;font-size:13px}
+#homePage .time-entry button{background:transparent;border:1px solid #6b5155;color:#e6a2a5}
+#homePage .history-manual-panel summary,#homePage .history-archive-summary{cursor:pointer;color:#fff;font-weight:700;padding:3px 0}
+#homePage .history-archive-summary{display:flex;justify-content:space-between;gap:10px;align-items:center}
+#homePage .history-archive-hint{font-size:11px;color:#aeb7c3;font-weight:400;text-align:right}
+#homePage .archive-item{background:#29323e;border-color:#46505e;color:#fff}
+#homePage .archive-item small{color:#bdc5d0}
+#homePage .archive-detail{background:#171e28;color:#e7eaf0}
+#homePage .dash-empty{background:#252e39;border-color:#596575;color:#c2c9d3}
+#homePage .week-actions .secondary{background:#303a47;color:#fff;border:1px solid #596575}
+@media(max-width:560px){
+ #homePage .dashboard-grid{gap:7px}
+ #homePage .dash-card{padding:12px 9px}
+ #homePage .dash-card small{font-size:10px}
+ #homePage .dash-card span{font-size:10px}
+ #homePage .history-day-summary{align-items:flex-start;flex-direction:column;gap:4px}
+ #homePage .history-day-meta{text-align:left}
+ #homePage .history-archive-summary{align-items:flex-start;flex-direction:column}
+}
+</style><h1>LYUBI — Relatório semanal</h1><p>${esc(weekDateRange(key))}</p><p><b>${entries.length}</b> registros · <b>${esc(formatTotal(total))}</b> investidos</p><table><thead><tr><th>Data</th><th>Atividade</th><th>Horário</th><th>Duração</th></tr></thead><tbody>${entries.map(e=>`<tr><td>${esc(e.date)}</td><td>${esc(e.activity)}</td><td>${esc(e.start||"")}–${esc(e.end||"")}</td><td>${esc(formatDuration(entrySeconds(e),true))}</td></tr>`).join("")}</tbody></table><section><h2>Minha avaliação</h2>${esc(evaluation||"Nenhuma avaliação registrada.")}</section><script>window.onload=()=>window.print()<\/script></html>`);w.document.close();
 }
 
 function renderTimeDashboard(){
@@ -1350,22 +1404,35 @@ function renderTimeDashboard(){
  syncWeekEvaluation();renderArchivedWeeks();
  const list=$("timeEntriesList");list.innerHTML="";
  $("timeEntriesEmpty").style.display=entries.length?"none":"block";
- entries.forEach(item=>{
-  const row=document.createElement("article");row.className="time-entry";
-  const left=document.createElement("div");
-  const name=document.createElement("div");name.className="time-entry-name";name.textContent=item.activity;
-  const meta=document.createElement("div");meta.className="time-entry-meta";
-  const date=new Date(item.date+"T12:00:00").toLocaleDateString("pt-BR");
-  const parts=[date,item.start+"–"+item.end];
-  if(item.source==="cronometro"){
-   if(Number(item.plannedSeconds)>0)parts.push("Planejado: "+formatDuration(Number(item.plannedSeconds),true));
-   if(statusLabels[item.status])parts.push(statusLabels[item.status]);
-  }
-  meta.textContent=parts.join(" · ");
-  const del=document.createElement("button");del.type="button";del.className="danger";del.textContent="Excluir";del.onclick=()=>deleteTimeEntry(item.id);
-  left.append(name,meta,del);
-  const duration=document.createElement("div");duration.className="time-entry-duration";duration.textContent=formatDuration(entrySeconds(item),true);
-  row.append(left,duration);list.appendChild(row);
+ const dailyGroups={};
+ entries.forEach(item=>{(dailyGroups[item.date]||(dailyGroups[item.date]=[])).push(item);});
+ Object.keys(dailyGroups).sort((a,b)=>b.localeCompare(a)).forEach((dayKey,dayIndex)=>{
+  const dayEntries=dailyGroups[dayKey],dayTotal=dayEntries.reduce((sum,item)=>sum+entrySeconds(item),0);
+  const day=document.createElement("details");day.className="history-day";day.open=dayIndex===0;
+  const summary=document.createElement("summary");summary.className="history-day-summary";
+  const dayName=document.createElement("span");dayName.className="history-day-name";
+  dayName.textContent=new Date(dayKey+"T12:00:00").toLocaleDateString("pt-BR",{weekday:"long",day:"2-digit",month:"long"});
+  const dayMeta=document.createElement("span");dayMeta.className="history-day-meta";
+  dayMeta.textContent=dayEntries.length+" "+(dayEntries.length===1?"atividade":"atividades")+" · "+formatTotal(dayTotal);
+  summary.append(dayName,dayMeta);day.appendChild(summary);
+  const content=document.createElement("div");content.className="history-day-content";
+  dayEntries.forEach(item=>{
+   const row=document.createElement("article");row.className="time-entry";
+   const left=document.createElement("div");
+   const name=document.createElement("div");name.className="time-entry-name";name.textContent=item.activity;
+   const meta=document.createElement("div");meta.className="time-entry-meta";
+   const parts=[(item.start||"--:--")+"–"+(item.end||"--:--")];
+   if(item.source==="cronometro"){
+    if(Number(item.plannedSeconds)>0)parts.push("Planejado: "+formatDuration(Number(item.plannedSeconds),true));
+    if(statusLabels[item.status])parts.push(statusLabels[item.status]);
+   }
+   meta.textContent=parts.join(" · ");
+   const del=document.createElement("button");del.type="button";del.className="danger";del.textContent="Excluir";del.onclick=()=>deleteTimeEntry(item.id);
+   left.append(name,meta,del);
+   const duration=document.createElement("div");duration.className="time-entry-duration";duration.textContent=formatDuration(entrySeconds(item),true);
+   row.append(left,duration);content.appendChild(row);
+  });
+  day.appendChild(content);list.appendChild(day);
  });
 }
 
