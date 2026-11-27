@@ -667,6 +667,36 @@ main{padding-top:10px!important}
  #inboxPage .inbox-date-wrap{font-size:10px}
  #inboxPage .inbox-date-wrap input{width:38px!important;max-width:38px!important}
 }
+/* CALENDÁRIO — tema LYUBI grafite e fluxo simplificado */
+.planner-accordion{background:#292d34!important;border:1px solid #41464f!important;border-radius:16px!important;color:#f4f5f6!important;box-shadow:0 5px 16px rgba(0,0,0,.16)}
+.planner-accordion>summary{color:#f5f5f6!important;font-size:16px;padding:7px 2px}
+.planner-accordion>summary:after{color:#d9b96f!important}
+.planner-accordion-content .note,.planner-accordion-content .field-label{color:#c4c9d0!important}
+.planner-accordion-content input,.planner-accordion-content select{background:#343941!important;color:#f5f5f6!important;border:1px solid #565d67!important;border-radius:10px!important}
+.planner-accordion-content input::placeholder{color:#aeb4bc!important}
+.planner-accordion-content .agenda-wrap{background:#242830!important;border:1px solid #414750!important;border-radius:14px!important;padding:12px!important;color:#f5f5f6!important}
+.planner-accordion-content .agenda-head strong,.planner-accordion-content .agenda-selected>strong{color:#f5f5f6!important}
+.planner-accordion-content .agenda-head button,.planner-accordion-content .agenda-nav button{background:#363c45!important;color:#f2f3f5!important;border:1px solid #505762!important}
+.planner-accordion-content .agenda-head button.active,.planner-accordion-content #agendaWeekView.active,.planner-accordion-content #agendaMonthView.active{background:#d9b96f!important;color:#292d34!important;border-color:#d9b96f!important}
+.planner-accordion-content .agenda-weekday{color:#aeb5bf!important;font-weight:700}
+.planner-accordion-content .agenda-day{background:#343a43!important;color:#f5f5f6!important;border:1px solid #464e59!important;border-radius:9px!important;min-height:42px}
+.planner-accordion-content .agenda-day.outside{opacity:.32}
+.planner-accordion-content .agenda-day.today{border:1px solid #d9b96f!important;box-shadow:inset 0 0 0 1px #d9b96f}
+.planner-accordion-content .agenda-day.selected{background:#d9b96f!important;color:#252930!important;border-color:#f0d99b!important;font-weight:800}
+.planner-accordion-content .agenda-dot{background:#d9b96f!important;width:5px;height:5px;border-radius:50%}
+.planner-accordion-content .agenda-selected{background:#303640!important;border:1px solid #454d58!important;border-radius:12px!important}
+.planner-accordion-content .agenda-empty{color:#b9c0c9!important}
+.planner-accordion-content .agenda-assignment,.planner-accordion-content .agenda-draft-item{background:#3a414b!important;color:#f5f5f6!important;border:1px solid #505965!important;border-radius:10px!important;padding:10px}
+.planner-accordion-content .agenda-creator{background:#303640!important;border:1px solid #4b535f!important;border-radius:12px;padding:12px;margin-top:10px}
+.saved-programs-accordion{margin-top:12px;background:#303640;border:1px solid #48515d;border-radius:12px;padding:11px 12px;color:#f5f5f6}
+.saved-programs-accordion>summary{display:flex;justify-content:space-between;gap:8px;align-items:center;cursor:pointer;font-weight:700;list-style:none}
+.saved-programs-accordion>summary::-webkit-details-marker{display:none}
+.saved-programs-accordion>summary:after{content:"＋";color:#d9b96f;font-size:18px}
+.saved-programs-accordion[open]>summary:after{content:"−"}
+.saved-programs-accordion>summary span{font-size:10px;color:#b7bec8;font-weight:500}
+.saved-programs-content{padding-top:12px}
+.planner-accordion-content #scheduleStatus{color:#c6cbd2!important}
+.calendar-intro{margin:0 0 10px!important}
 </style>
 </head>
 <body>
@@ -860,35 +890,10 @@ main{padding-top:10px!important}
 
   <details class="panel planner-details planner-accordion">
    <summary>Calendário</summary>
-   <div class="planner-accordion-content"><p class="note">Salve listas para reutilizar em outros dias.</p>
-
-   <div class="field">
-    <label class="field-label" for="scheduleName">Nome da programação</label>
-    <input id="scheduleName" placeholder="Ex.: Quarta-feira" autocomplete="off">
-   </div>
-
-   <div class="actions">
-    <button type="button" onclick="saveSchedule()">Salvar programação atual</button>
-   </div>
-
-   <div class="field">
-    <label class="field-label" for="savedSchedules">Programações salvas</label>
-    <select id="savedSchedules">
-     <option value="">Selecione uma programação</option>
-    </select>
-   </div>
-
-   <div class="actions">
-    <button type="button" onclick="loadSchedule()">Carregar e substituir tarefas</button>
-    <button type="button" class="secondary" onclick="exportSchedules()">Exportar programações</button>
-    <button type="button" class="secondary" onclick="document.getElementById('importScheduleFile').click()">Importar arquivo</button>
-    <button type="button" class="danger" onclick="deleteSchedule()">Excluir programação salva</button>
-    <input id="importScheduleFile" type="file" accept=".json,application/json" style="display:none" onchange="importSchedules(event)">
-   </div>
-
-   <p class="note" id="scheduleStatus">As programações ficam salvas neste dispositivo.</p>
-
-   <section class="agenda-wrap" aria-label="Agenda de programações">
+   <div class="planner-accordion-content">
+   <div class="planner-accordion-content">
+    <p class="note calendar-intro">Escolha um dia para ver, criar ou organizar sua programação.</p>
+    <section class="agenda-wrap" aria-label="Agenda de programações">
     <div class="agenda-head">
      <strong>Agenda de programações</strong>
      <div class="actions">
@@ -932,7 +937,36 @@ main{padding-top:10px!important}
      </div>
     </div>
     <p class="note">Você pode escolher um modelo salvo ou criar uma programação nova diretamente para a data selecionada. A criação direta não altera seus modelos salvos.</p>
-   </section></div>
+   </section>
+    <details class="saved-programs-accordion"><summary>Programações salvas <span>Modelos para reutilizar</span></summary><div class="saved-programs-content"><p class="note">Salve listas para reutilizar em outros dias.</p>
+
+   <div class="field">
+    <label class="field-label" for="scheduleName">Nome da programação</label>
+    <input id="scheduleName" placeholder="Ex.: Quarta-feira" autocomplete="off">
+   </div>
+
+   <div class="actions">
+    <button type="button" onclick="saveSchedule()">Salvar programação atual</button>
+   </div>
+
+   <div class="field">
+    <label class="field-label" for="savedSchedules">Programações salvas</label>
+    <select id="savedSchedules">
+     <option value="">Selecione uma programação</option>
+    </select>
+   </div>
+
+   <div class="actions">
+    <button type="button" onclick="loadSchedule()">Carregar e substituir tarefas</button>
+    <button type="button" class="secondary" onclick="exportSchedules()">Exportar programações</button>
+    <button type="button" class="secondary" onclick="document.getElementById('importScheduleFile').click()">Importar arquivo</button>
+    <button type="button" class="danger" onclick="deleteSchedule()">Excluir programação salva</button>
+    <input id="importScheduleFile" type="file" accept=".json,application/json" style="display:none" onchange="importSchedules(event)">
+   </div>
+
+   <p class="note" id="scheduleStatus">As programações ficam salvas neste dispositivo.</p></div></details>
+    
+   </div></div>
   </details>
   <details class="panel planner-details planner-accordion">
    <summary>Configurações de pausas</summary>
