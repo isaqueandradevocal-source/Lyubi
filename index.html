@@ -1346,6 +1346,7 @@ function renderTimeDashboard(){
  const days=new Set(entries.map(item=>item.date)).size;
  $("weekTotal").textContent=formatTotal(total);
  $("weekEntries").textContent=entries.length;
+ $("weekDays").textContent=days;
  $("weekAverage").textContent=days?formatTotal(total/days):"0 min";
  $("donutTotal").textContent=total?formatTotal(total):"0h";
  /* Agrupa nomes que se referem à mesma atividade, mesmo quando escritos de formas diferentes. */
