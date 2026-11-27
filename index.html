@@ -816,6 +816,10 @@ body.theme-light .time-reward-bar{background:#fff!important;border:1px solid #e1
 body.theme-light .time-reward-bar .theme-toggle{background:#eef0f2!important;color:#34363a!important;border-color:#d8dce1!important}
 @media(max-width:520px){.time-reward-bar{width:calc(100% - 28px);min-height:54px;padding:7px 10px;gap:9px;margin:7px auto 8px}.time-reward-glasses{width:30px;height:30px;min-width:30px}.time-reward-glasses img{width:29px;height:29px}.time-reward-info #rewardBalanceLabel{font-size:16px!important}.time-reward-bar .reward-use-button{padding:7px 10px!important;min-height:34px}.time-reward-bar .theme-toggle{width:34px!important;height:34px!important;min-width:34px!important}}
 
+
+/* Diálogos nativos do LYUBI respeitam os dois temas */
+body.theme-light .lyubi-native-dialog>div{--lyubi-dialog-bg:#fff;--lyubi-dialog-text:#34363a;--lyubi-input-bg:#f3f4f6}
+body:not(.theme-light) .lyubi-native-dialog>div{--lyubi-dialog-bg:#202631;--lyubi-dialog-text:#fff;--lyubi-input-bg:#303740}
 </style>
 </head>
 <body>
@@ -1814,15 +1818,45 @@ function consumeRewardTime(minutes,label){
  rewardLedger.unshift({date:todayKey(),type:"used",amount:minutes,label:label||"Tempo livre utilizado"});
  saveRewards();updateTimeRewardDisplay();return true;
 }
-function useRewardBalance(){
- if(running){alert("Encerre a execução atual antes de usar o saldo.");return;}
+function showLyubiNotice(message){
+ return new Promise(resolve=>{
+  const modal=document.createElement("div");
+  modal.className="lyubi-native-dialog";
+  modal.style.cssText="position:fixed;inset:0;z-index:100000;background:rgba(0,0,0,.68);display:flex;align-items:center;justify-content:center;padding:20px";
+  const box=document.createElement("div");
+  box.style.cssText="width:100%;max-width:360px;padding:24px;border-radius:20px;background:var(--lyubi-dialog-bg,#202631);color:var(--lyubi-dialog-text,#fff);box-shadow:0 16px 50px rgba(0,0,0,.3)";
+  const title=document.createElement("h3");title.textContent="LYUBI";title.style.cssText="margin:0 0 14px;font-size:18px";
+  const body=document.createElement("p");body.textContent=message;body.style.cssText="margin:0 0 22px;line-height:1.5;font-size:15px";
+  const ok=document.createElement("button");ok.type="button";ok.textContent="Entendi";ok.style.cssText="display:block;margin-left:auto;padding:11px 20px;border:0;border-radius:12px;background:#e8c477;color:#25282d;font-weight:800";
+  ok.onclick=()=>{modal.remove();resolve();};box.append(title,body,ok);modal.append(box);document.body.append(modal);
+ });
+}
+function showLyubiNumberPrompt(balance,suggested){
+ return new Promise(resolve=>{
+  const modal=document.createElement("div");
+  modal.className="lyubi-native-dialog";
+  modal.style.cssText="position:fixed;inset:0;z-index:100000;background:rgba(0,0,0,.68);display:flex;align-items:center;justify-content:center;padding:20px";
+  const box=document.createElement("div");
+  box.style.cssText="width:100%;max-width:360px;padding:24px;border-radius:20px;background:var(--lyubi-dialog-bg,#202631);color:var(--lyubi-dialog-text,#fff);box-shadow:0 16px 50px rgba(0,0,0,.3)";
+  const title=document.createElement("h3");title.textContent="Usar tempo livre";title.style.cssText="margin:0 0 10px;font-size:19px";
+  const message=document.createElement("p");message.textContent="Você tem "+balance+" minuto(s) disponíveis. Quanto deseja usar agora?";message.style.cssText="margin:0 0 16px;line-height:1.5;font-size:15px";
+  const input=document.createElement("input");input.type="number";input.inputMode="numeric";input.min="1";input.max=String(balance);input.step="1";input.value=String(suggested);input.style.cssText="box-sizing:border-box;width:100%;padding:13px;border-radius:12px;border:1px solid #777;background:var(--lyubi-input-bg,#303740);color:var(--lyubi-dialog-text,#fff);font:inherit;font-size:18px;margin-bottom:20px";
+  const actions=document.createElement("div");actions.style.cssText="display:flex;justify-content:flex-end;gap:10px";
+  const cancel=document.createElement("button");cancel.type="button";cancel.textContent="Cancelar";cancel.style.cssText="padding:11px 15px;border:1px solid #777;border-radius:11px;background:transparent;color:inherit;font-weight:700";
+  const use=document.createElement("button");use.type="button";use.textContent="Usar tempo";use.style.cssText="padding:11px 16px;border:0;border-radius:11px;background:#e8c477;color:#25282d;font-weight:800";
+  cancel.onclick=()=>{modal.remove();resolve(null);};
+  use.onclick=()=>{const value=Number(input.value);modal.remove();resolve(value);};
+  actions.append(cancel,use);box.append(title,message,input,actions);modal.append(box);document.body.append(modal);input.focus();input.select();
+ });
+}
+async function useRewardBalance(){
+ if(running){await showLyubiNotice("Encerre a execução atual antes de usar o saldo.");return;}
  syncRewardDay();const balance=Number(rewardState.balance)||0;
- if(balance<1){alert("Você ainda não tem tempo livre conquistado disponível.");return;}
+ if(balance<1){await showLyubiNotice("Você ainda não tem tempo livre conquistado disponível.");return;}
  const suggested=Math.min(5,balance);
- const answer=prompt("Você tem "+balance+" minuto(s) disponíveis. Quantos deseja usar agora?\n\nDigite um número inteiro de 1 a "+balance+".",String(suggested));
- if(answer===null)return;
- const minutes=Number(answer);
- if(!Number.isInteger(minutes)||minutes<1||minutes>balance){alert("Informe um número inteiro entre 1 e "+balance+".");return;}
+ const minutes=await showLyubiNumberPrompt(balance,suggested);
+ if(minutes===null)return;
+ if(!Number.isInteger(minutes)||minutes<1||minutes>balance){await showLyubiNotice("Informe um número inteiro entre 1 e "+balance+".");return;}
  if(!consumeRewardTime(minutes,"Tempo livre iniciado"))return;
  startRewardTimer(minutes);
 }
