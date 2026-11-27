@@ -703,6 +703,7 @@ main{padding-top:10px!important}
 
 <header>
  <div class="time-reward-bar" id="timeRewardBar" aria-live="polite"><div class="time-reward-glasses" id="timeRewardGlasses"><img src="./icons/icon-192.png?v=43" alt="Ampulheta LYUBI"></div><div class="time-reward-info"><div class="time-reward-label">TEMPO CONQUISTADO</div><strong id="timeRewardTotal">0 minutos</strong><small id="rewardBalanceLabel" style="color:#e8c477;font-size:11px">Saldo disponível: 0 min</small></div><span class="time-reward-hint" id="timeRewardHint">Cada tarefa concluída rende 1 minuto livre</span><button type="button" class="reward-use-button" onclick="useRewardBalance()">Usar saldo</button></div>
+ <div class="theme-control"><button type="button" id="themeToggle" class="theme-toggle" onclick="toggleTheme()">Tema claro</button></div>
  <nav class="page-nav" aria-label="Navegação principal"><button type="button" id="plannerTab" class="active" onclick="showPage('planner')">LYUBI</button><button type="button" id="inboxTab" onclick="showPage('inbox')" aria-label="Ideias"><svg viewBox="0 0 64 74" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M32 9C18.8 9 8.5 19.4 8.5 32.3c0 8.4 3.8 14.8 9.2 20.1 2.4 2.4 3.3 4.6 3.3 8.2h22c0-3.6.9-5.8 3.3-8.2 5.4-5.3 9.2-11.7 9.2-20.1C55.5 19.4 45.2 9 32 9Z"/><path d="M21 60.6h22M21.5 64.5l21-1.8M22.5 68.2l19-1.7M26 71.5h12"/><path d="M32 2v4M10.5 9.5l4.2 4.2M2 32h4M53.5 13.7l4.2-4.2M58 32h4M10.5 54.5l4.2-4.2M53.5 50.3l4.2 4.2"/></g></svg>Ideias<span id="inboxCount" class="inbox-count">0</span></button><button type="button" id="homeTab" onclick="showPage('home')">Histórico</button></nav>
 </header>
 
@@ -1089,6 +1090,20 @@ function updateActivitySuggestions(){
 function saveTasks(){localStorage.setItem("meuTempoTasks",JSON.stringify(tasks));}
 function saveHistory(){localStorage.setItem("meuTempoHistory",JSON.stringify(historyEntries));}
 
+
+function applyTheme(theme){
+ const light=theme==="light";
+ document.body.classList.toggle("theme-light",light);
+ const toggle=document.getElementById("themeToggle");
+ if(toggle)toggle.textContent=light?"Tema escuro":"Tema claro";
+ const meta=document.querySelector('meta[name="theme-color"]');
+ if(meta)meta.content=light?"#ffffff":"#424448";
+}
+function toggleTheme(){
+ const next=document.body.classList.contains("theme-light")?"dark":"light";
+ localStorage.setItem("lyubiTheme",next);
+ applyTheme(next);
+}
 function showPage(page){
   if(page==='history')page='home';
   const isPlanner=page==='planner',isInbox=page==='inbox';
@@ -1335,6 +1350,55 @@ function printWeekReport(){
  #homePage .history-day-meta{text-align:left}
  #homePage .history-archive-summary{align-items:flex-start;flex-direction:column}
 }
+
+/* Alternância de tema: o modo escuro original permanece intacto */
+.theme-control{display:flex;justify-content:flex-end;max-width:900px;margin:10px auto 0;padding:0 20px}
+.theme-toggle{background:#34363a!important;color:#fff!important;border:1px solid #777b82!important;border-radius:999px!important;padding:8px 14px!important;font-size:12px!important;box-shadow:none!important}
+body.theme-light{background:#f4f5f6!important;color:#34363a!important}
+body.theme-light header{background:#fff!important;color:#34363a!important;border-bottom:1px solid #e1e3e7;box-shadow:0 3px 14px rgba(0,0,0,.05)}
+body.theme-light header p,body.theme-light .time-reward-hint{color:#656a72!important}
+body.theme-light .time-reward-label{color:#656a72!important}
+body.theme-light .theme-toggle{background:#424448!important;color:#fff!important;border-color:#424448!important}
+body.theme-light .page-nav{background:#fff!important}
+body.theme-light .page-nav button,body.theme-light .page-nav button.active{background:#f0f1f3!important;color:#424448!important;border:1px solid #d9dce1!important}
+body.theme-light .page-nav button.active{background:#424448!important;color:#fff!important;border-color:#424448!important}
+body.theme-light main{color:#34363a!important}
+body.theme-light .panel,body.theme-light .home-stat,body.theme-light .dash-card,body.theme-light .history-stat,body.theme-light .archive-item,body.theme-light .archive-detail,body.theme-light .agenda-card,body.theme-light .agenda-panel,body.theme-light .inbox-card,body.theme-light .idea-card{background:#fff!important;color:#34363a!important;border-color:#dfe2e6!important;box-shadow:0 4px 14px rgba(0,0,0,.045)!important}
+body.theme-light .panel h2,body.theme-light .panel h3,body.theme-light .home-intro h2,body.theme-light .taskname,body.theme-light .time-entry-name,body.theme-light .history-day-name,body.theme-light .activity-row-top,body.theme-light .archive-item strong{color:#34363a!important}
+body.theme-light .note,body.theme-light .field-label,body.theme-light .time-entry-meta,body.theme-light .activity-meta,body.theme-light .history-day-meta,body.theme-light .archive-item small,body.theme-light .home-stat small{color:#686d75!important}
+body.theme-light .home-intro,body.theme-light .planner-panel,body.theme-light .planner-bottom-actions,body.theme-light #execution,body.theme-light #execution:fullscreen{background:#fff!important;color:#34363a!important;border-color:#dfe2e6!important}
+body.theme-light .home-intro p{color:#686d75!important}
+body.theme-light input,body.theme-light select,body.theme-light textarea,body.theme-light .planner-form .voice-area,body.theme-light .voice-area,body.theme-light .time-form input,body.theme-light #dashboardWeek,body.theme-light #weekEvaluation{background:#fff!important;color:#34363a!important;border-color:#cbd0d7!important}
+body.theme-light input::placeholder,body.theme-light textarea::placeholder{color:#858b94!important}
+body.theme-light .task,body.theme-light .time-entry,body.theme-light .history-day{background:#fff!important;color:#34363a!important;border-color:#e1e4e8!important}
+body.theme-light .history-day{border:1px solid #dfe2e6!important}
+body.theme-light .history-day-summary{background:#f7f8f9!important}
+body.theme-light .history-day-content{background:#fff!important}
+body.theme-light .activity-track{background:#e5e7eb!important}
+body.theme-light .archive-detail{background:#f5f6f7!important}
+body.theme-light .history-average{color:#686d75!important}
+body.theme-light .history-average strong,body.theme-light .time-entry-duration,body.theme-light .time-chart-summary strong{color:#9a7426!important}
+body.theme-light .history-highlight{background:#fff!important;border-color:#c9a653!important}
+body.theme-light .history-highlight strong{color:#9a7426!important}
+body.theme-light .history-manual-panel summary,body.theme-light .history-archive-summary{color:#34363a!important}
+body.theme-light .history-archive-hint{color:#747982!important}
+body.theme-light .dash-empty,body.theme-light .inbox-empty{background:#f7f8f9!important;color:#686d75!important;border-color:#dfe2e6!important}
+body.theme-light .week-actions .secondary,body.theme-light button.secondary{background:#eceef1!important;color:#424448!important;border-color:#d7dbe0!important}
+body.theme-light .planner-panel .field-label,body.theme-light .planner-panel label{color:#424448!important}
+body.theme-light .planner-panel .note{color:#686d75!important}
+body.theme-light .planner-form .voice-area{border-color:#dfe2e6!important}
+body.theme-light .settings label{color:#56595f!important}
+body.theme-light .inbox-filter{color:#424448!important}
+body.theme-light .agenda-day{color:#424448!important}
+body.theme-light .agenda-day.selected{background:#eceef0!important}
+body.theme-light .agenda-nav button{background:#eceef1!important;color:#424448!important;border-color:#d7dbe0!important}
+body.theme-light .time-reward-bar{background:#fff!important;color:#34363a!important;border:1px solid #e1e3e7!important}
+body.theme-light .time-reward-info strong{color:#34363a!important}
+body.theme-light .time-reward-glasses{background:#f1f2f4!important}
+body.theme-light .planner-panel .task{background:transparent!important}
+body.theme-light .planner-panel .task:hover{background:#f3f4f6!important}
+body.theme-light .planner-panel .voice-area button{color:#fff!important}
+@media(max-width:600px){.theme-control{margin-top:7px;padding:0 12px}.theme-toggle{padding:7px 12px!important}}
 </style><h1>LYUBI — Relatório semanal</h1><p>${esc(weekDateRange(key))}</p><p><b>${entries.length}</b> registros · <b>${esc(formatTotal(total))}</b> investidos</p><table><thead><tr><th>Data</th><th>Atividade</th><th>Horário</th><th>Duração</th></tr></thead><tbody>${entries.map(e=>`<tr><td>${esc(e.date)}</td><td>${esc(e.activity)}</td><td>${esc(e.start||"")}–${esc(e.end||"")}</td><td>${esc(formatDuration(entrySeconds(e),true))}</td></tr>`).join("")}</tbody></table><section><h2>Minha avaliação</h2>${esc(evaluation||"Nenhuma avaliação registrada.")}</section><script>window.onload=()=>window.print()<\/script></html>`);w.document.close();
 }
 
@@ -1647,7 +1711,8 @@ function saveRewards(){localStorage.setItem("meuTempoRewards",JSON.stringify(rew
 function syncRewardDay(){const today=todayKey();if(rewardState.date!==today){rewardState={...rewardState,date:today,balance:Number(rewardState.balance)||0,earned:Number(rewardState.earned)||0};saveRewards();}}
 let lastDisplayedRewardTotal=null;
 function updateTimeRewardDisplay(){
- syncRewardDay();
+ applyTheme(localStorage.getItem("lyubiTheme")==="light"?"light":"dark");
+syncRewardDay();
  const earned=Number(rewardState.earned)||0;
  const inProgress=0;
  const total=earned;
