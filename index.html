@@ -799,6 +799,23 @@ body.theme-light .time-decision-card h2,body.theme-light .time-decision-card p{c
 body.theme-light .archive-detail{background:#f5f6f7!important;color:#34363a!important}
 body.theme-light .dash-empty{border-color:#dfe2e6!important}
 
+/* Cabeçalho compacto: saldo livre e alternância por ícone */
+.time-reward-bar{display:flex;align-items:center;justify-content:flex-start;gap:10px;width:calc(100% - 28px);max-width:620px;min-height:58px;box-sizing:border-box;padding:8px 12px;margin:8px auto 8px;border-radius:14px;background:linear-gradient(110deg,#252a30,#383b40 58%,#292e34);box-shadow:0 3px 12px rgba(0,0,0,.12)}
+.time-reward-glasses{width:34px;height:34px;min-width:34px;display:flex;align-items:center;justify-content:center}
+.time-reward-glasses img{width:32px;height:32px;object-fit:contain}
+.time-reward-info{display:flex;flex-direction:column;gap:1px;min-width:0;flex:1}
+.time-reward-label{font-size:9px;letter-spacing:1.1px;line-height:1.1}
+.time-reward-info #rewardBalanceLabel{display:block;font-size:17px!important;font-weight:800;line-height:1.15;color:#f0cc78!important;white-space:nowrap}
+.reward-total-hidden{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
+.time-reward-hint{display:none!important}
+.time-reward-bar .reward-use-button{margin-left:auto;padding:8px 12px!important;min-height:36px;font-size:12px!important;white-space:nowrap}
+.theme-control{display:none!important}
+.time-reward-bar .theme-toggle{width:36px!important;height:36px!important;min-width:36px!important;padding:7px!important;display:flex!important;align-items:center;justify-content:center;border-radius:50%!important;background:rgba(255,255,255,.1)!important;border:1px solid rgba(255,255,255,.22)!important;color:#fff!important;box-shadow:none!important}
+.time-reward-bar .theme-toggle svg{width:20px;height:20px;display:block}
+body.theme-light .time-reward-bar{background:#fff!important;border:1px solid #e1e3e7!important;box-shadow:0 3px 12px rgba(0,0,0,.06)!important}
+body.theme-light .time-reward-bar .theme-toggle{background:#eef0f2!important;color:#34363a!important;border-color:#d8dce1!important}
+@media(max-width:520px){.time-reward-bar{width:calc(100% - 28px);min-height:54px;padding:7px 10px;gap:9px;margin:7px auto 8px}.time-reward-glasses{width:30px;height:30px;min-width:30px}.time-reward-glasses img{width:29px;height:29px}.time-reward-info #rewardBalanceLabel{font-size:16px!important}.time-reward-bar .reward-use-button{padding:7px 10px!important;min-height:34px}.time-reward-bar .theme-toggle{width:34px!important;height:34px!important;min-width:34px!important}}
+
 </style>
 </head>
 <body>
@@ -1453,22 +1470,6 @@ function printWeekReport(){
 }
 
 
-/* Cabeçalho compacto: saldo livre e alternância por ícone */
-.time-reward-bar{display:flex;align-items:center;justify-content:flex-start;gap:10px;width:calc(100% - 28px);max-width:620px;min-height:58px;box-sizing:border-box;padding:8px 12px;margin:8px auto 8px;border-radius:14px;background:linear-gradient(110deg,#252a30,#383b40 58%,#292e34);box-shadow:0 3px 12px rgba(0,0,0,.12)}
-.time-reward-glasses{width:34px;height:34px;min-width:34px;display:flex;align-items:center;justify-content:center}
-.time-reward-glasses img{width:32px;height:32px;object-fit:contain}
-.time-reward-info{display:flex;flex-direction:column;gap:1px;min-width:0;flex:1}
-.time-reward-label{font-size:9px;letter-spacing:1.1px;line-height:1.1}
-.time-reward-info #rewardBalanceLabel{display:block;font-size:17px!important;font-weight:800;line-height:1.15;color:#f0cc78!important;white-space:nowrap}
-.reward-total-hidden{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
-.time-reward-hint{display:none!important}
-.time-reward-bar .reward-use-button{margin-left:auto;padding:8px 12px!important;min-height:36px;font-size:12px!important;white-space:nowrap}
-.theme-control{display:none!important}
-.time-reward-bar .theme-toggle{width:36px!important;height:36px!important;min-width:36px!important;padding:7px!important;display:flex!important;align-items:center;justify-content:center;border-radius:50%!important;background:rgba(255,255,255,.1)!important;border:1px solid rgba(255,255,255,.22)!important;color:#fff!important;box-shadow:none!important}
-.time-reward-bar .theme-toggle svg{width:20px;height:20px;display:block}
-body.theme-light .time-reward-bar{background:#fff!important;border:1px solid #e1e3e7!important;box-shadow:0 3px 12px rgba(0,0,0,.06)!important}
-body.theme-light .time-reward-bar .theme-toggle{background:#eef0f2!important;color:#34363a!important;border-color:#d8dce1!important}
-@media(max-width:520px){.time-reward-bar{width:calc(100% - 28px);min-height:54px;padding:7px 10px;gap:9px;margin:7px auto 8px}.time-reward-glasses{width:30px;height:30px;min-width:30px}.time-reward-glasses img{width:29px;height:29px}.time-reward-info #rewardBalanceLabel{font-size:16px!important}.time-reward-bar .reward-use-button{padding:7px 10px!important;min-height:34px}.time-reward-bar .theme-toggle{width:34px!important;height:34px!important;min-width:34px!important}}
 </style><h1>LYUBI — Relatório semanal</h1><p>${esc(weekDateRange(key))}</p><p><b>${entries.length}</b> registros · <b>${esc(formatTotal(total))}</b> investidos</p><table><thead><tr><th>Data</th><th>Atividade</th><th>Horário</th><th>Duração</th></tr></thead><tbody>${entries.map(e=>`<tr><td>${esc(e.date)}</td><td>${esc(e.activity)}</td><td>${esc(e.start||"")}–${esc(e.end||"")}</td><td>${esc(formatDuration(entrySeconds(e),true))}</td></tr>`).join("")}</tbody></table><section><h2>Minha avaliação</h2>${esc(evaluation||"Nenhuma avaliação registrada.")}</section><script>window.onload=()=>window.print()<\/script></html>`);w.document.close();
 }
 
