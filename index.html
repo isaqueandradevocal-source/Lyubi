@@ -100,9 +100,8 @@ button.danger:hover:not(:disabled) { background: #ffe1e1; box-shadow: none; }
 .voice-status.error { color: #b42332; }
 
 /* Tela inicial */
-.home-intro { padding: 30px; background: var(--mt-navy); color: white; border-radius: 20px; box-shadow: none; margin-bottom: 18px; }
-.home-intro h2 { font-size: clamp(24px,4vw,31px); font-weight: 800; letter-spacing: -.8px; margin-bottom: 9px; color: white; }
-.home-intro p { margin: 0; color: #d1d3d6; font-size: 14px; line-height: 1.5; max-width: 580px; }
+.home-intro { padding: 5px 2px 8px; background: transparent; color: var(--mt-text); border-radius: 0; box-shadow: none; margin: 0 0 5px; }
+.home-intro p { margin: 0; color: var(--mt-text); font-size: 14px; line-height: 1.35; font-weight: 600; max-width: 580px; }
 .home-stats { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; margin-bottom: 18px; }
 .home-stat { padding: 18px; min-width: 0; background: white; border: 1px solid var(--mt-line); border-radius: 15px; }
 .home-stat small { display: block; color: var(--mt-muted); font-size: 12px; font-weight: 650; margin-bottom: 8px; line-height: 1.35; }
@@ -983,7 +982,7 @@ body.theme-light #plannerPage .planner-form .voice-area.voice-compact #voiceButt
 <div id="plannerPage" class="">
  <main>
   <section class="panel planner-panel">
-   <div class="home-intro"><h2>Bem-vindo!</h2><p>O que gostaria de executar hoje?</p></div>
+   <div class="home-intro"><p>O que você vai executar hoje?</p></div>
 
    <div class="planner-form">
     <div class="field planner-hidden-internal">
