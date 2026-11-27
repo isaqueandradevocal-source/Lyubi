@@ -609,6 +609,19 @@ main{padding-top:10px!important}
  #inboxPage .inbox-meta-controls input{max-width:125px}
 }
 
+/* Melhorias de fluxo na aba Ideias */
+.inbox-filter-bar{display:flex;gap:6px;margin:8px 0 12px}
+.inbox-filter{flex:1;min-width:0;padding:8px 10px;border-radius:10px;background:#595b5f;color:#fff;border:1px solid #77797e;font-size:12px;box-shadow:none}
+.inbox-filter.active{background:#fff;color:#424448;border-color:#fff;font-weight:750}
+.inbox-quick-options{grid-column:1/-1;font-size:12px;color:#fff}
+.inbox-quick-options summary{cursor:pointer;padding:6px 2px;opacity:.85}
+.inbox-quick-fields{display:flex;gap:8px;flex-wrap:wrap;padding:5px 0}
+#inboxPage .inbox-add-expanded{grid-template-columns:minmax(0,1fr) auto!important}
+#inboxPage .inbox-add-expanded>#inboxInput{grid-column:1}
+#inboxPage .inbox-add-expanded>button{grid-column:2}
+#inboxPage .inbox-add-expanded>.inbox-quick-options{grid-column:1/-1}
+#inboxPage .inbox-age{grid-column:1/-1;font-size:10px;color:#e1e2e4;opacity:.72;padding-top:1px}
+@media(max-width:600px){.inbox-filter{padding:8px 5px;font-size:11px}.inbox-quick-fields{display:grid;grid-template-columns:1fr 1fr}}
 </style>
 </head>
 <body>
@@ -632,13 +645,20 @@ main{padding-top:10px!important}
    <h2>Nova tarefa</h2>
    <div class="inbox-add inbox-add-expanded">
     <input id="inboxInput" type="text" placeholder="O que você precisa fazer?" maxlength="140" autocomplete="off">
-    <label class="inbox-field-label">Prioridade<select id="inboxPriority"><option value="future">Futura</option><option value="later">Fazer depois</option><option value="urgent">Muito urgente</option></select></label>
-    <label class="inbox-field-label">Planejar para<input id="inboxPlannedDate" type="date"></label>
     <button type="button" onclick="addInboxTask()">Adicionar</button>
+    <details class="inbox-quick-options"><summary>Opções</summary><div class="inbox-quick-fields">
+     <label class="inbox-field-label">Prioridade<select id="inboxPriority"><option value="future">Futura</option><option value="later">Fazer depois</option><option value="urgent">Muito urgente</option></select></label>
+     <label class="inbox-field-label">Planejar para<input id="inboxPlannedDate" type="date"></label>
+    </div></details>
    </div>
   </section>
   <section class="panel">
    <h2>Pendentes <span id="inboxPendingCount" class="inbox-count">0</span></h2>
+   <div class="inbox-filter-bar" role="group" aria-label="Filtrar ideias">
+    <button type="button" class="inbox-filter active" data-filter="all" onclick="setInboxFilter('all')">Todas</button>
+    <button type="button" class="inbox-filter" data-filter="urgent" onclick="setInboxFilter('urgent')">Urgentes</button>
+    <button type="button" class="inbox-filter" data-filter="later" onclick="setInboxFilter('later')">Depois</button>
+   </div>
    <div id="inboxPendingList"></div>
    <p id="inboxEmpty" class="inbox-empty">Nenhuma ideia anotada. Registre aqui algo que deseja colocar em prática.</p>
   </section>
@@ -1277,6 +1297,13 @@ function renderHome(){
  $("homeCompleted").textContent=Number(today.completed)||0;
  $("homeTime").textContent=formatDuration(Number(today.seconds)||0);
 }
+let inboxFilter="all";
+function setInboxFilter(filter){
+ if(!["all","urgent","later"].includes(filter))return;
+ inboxFilter=filter;
+ document.querySelectorAll(".inbox-filter").forEach(button=>button.classList.toggle("active",button.dataset.filter===filter));
+ renderInbox();
+}
 function saveInbox(){localStorage.setItem("meuTempoInbox",JSON.stringify(inboxTasks));}
 function updateInboxCount(){
  const pending=inboxTasks.filter(item=>!item.done).length;
@@ -1323,6 +1350,7 @@ function renderInbox(){
  const pending=$("inboxPendingList"),completed=$("inboxCompletedList");
  if(!pending||!completed)return;pending.innerHTML="";completed.innerHTML="";
  const open=inboxTasks.filter(item=>!item.done),done=inboxTasks.filter(item=>item.done);
+ const visibleOpen=open.filter(item=>inboxFilter==="all"||(item.priority||"future")===inboxFilter);
  $("inboxPendingCount").textContent=open.length;$("inboxDoneCount").textContent=done.length;
  $("inboxEmpty").style.display=open.length?"none":"block";$("inboxDoneEmpty").style.display=done.length?"none":"block";
  updateInboxCount();
@@ -1342,6 +1370,8 @@ function renderInbox(){
   const del=document.createElement("button");del.type="button";del.className="inbox-icon-btn delete";del.title="Excluir tarefa";del.setAttribute("aria-label","Excluir tarefa");
   del.innerHTML='<svg viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M5 7l1 13h12l1-13M9 7V4h6v3"/></svg>';del.onclick=()=>deleteInboxTask(item.id);
   row.append(del);
+  const created=item.createdAt?new Date(item.createdAt):null;
+  if(created&&!isNaN(created)){const days=Math.max(0,Math.floor((Date.now()-created.getTime())/86400000));const age=document.createElement("span");age.className="inbox-age";age.textContent=days===0?"Registrada hoje":days===1?"Registrada há 1 dia":`Registrada há ${days} dias`;row.appendChild(age);}
   const controls=document.createElement("div");controls.className="inbox-meta-controls";
   const badge=document.createElement("span");badge.className="inbox-priority "+priority;badge.textContent=priority==="urgent"?"Muito urgente":priority==="later"?"Fazer depois":"Futura";
   const prioritySelect=document.createElement("select");prioritySelect.setAttribute("aria-label","Prioridade da ideia");
@@ -1353,7 +1383,7 @@ function renderInbox(){
   controls.append(badge,prioritySelect,dateLabel,dateInput);row.appendChild(controls);
   return row;
  };
- open.forEach(item=>pending.appendChild(makeRow(item,false)));
+ visibleOpen.forEach(item=>pending.appendChild(makeRow(item,false)));
  done.forEach(item=>completed.appendChild(makeRow(item,true)));
 }
 function beginFromHome(){showPage("planner");startProgram();}
