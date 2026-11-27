@@ -1392,7 +1392,7 @@ function saveCurrentTaskTime(status){
  const startedAt=new Date(taskStartedAt);
  const plannedSeconds=taskPlannedSeconds||Number(task.minutes)*60;
  taskStartedAt=0;taskActiveStartedAt=0;taskElapsedMs=0;taskPlannedSeconds=0;
- if(actualSeconds>0){
+ if(actualSeconds>=10){
   const date=startedAt.getFullYear()+"-"+pad2(startedAt.getMonth()+1)+"-"+pad2(startedAt.getDate());
   const start=pad2(startedAt.getHours())+":"+pad2(startedAt.getMinutes());
   const end=pad2(endedAt.getHours())+":"+pad2(endedAt.getMinutes());
@@ -1412,16 +1412,16 @@ function saveCurrentTaskTime(status){
   task.lastActualSeconds=actualSeconds;
   saveTasks();renderTasks();
   renderTimeDashboard();
+  // Só registra no histórico quando o tempo real atingiu pelo menos 10 segundos.
+  historyEntries.push({
+   id:String(Date.now())+"-"+String(Math.random()).slice(2,8),
+   name:task.name,category:task.category||"",
+   plannedSeconds,actualSeconds,
+   status:status||"encerrada",completedAt:endedAt.toISOString()
+  });
+  saveHistory();
+  renderHistory();
  }
- // Toda atividade que chega à execução entra automaticamente no histórico.
- historyEntries.push({
-  id:String(Date.now())+"-"+String(Math.random()).slice(2,8),
-  name:task.name,category:task.category||"",
-  plannedSeconds,actualSeconds,
-  status:status||"encerrada",completedAt:endedAt.toISOString()
- });
- saveHistory();
- renderHistory();
  renderHome();
  return actualSeconds;
 }
