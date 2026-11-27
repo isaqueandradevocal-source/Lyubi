@@ -1139,12 +1139,28 @@ function renderTimeDashboard(){
  $("weekEntries").textContent=entries.length;
  $("weekAverage").textContent=days?formatTotal(total/days):"0 min";
  $("donutTotal").textContent=total?formatTotal(total):"0h";
- /* Agrupa exclusivamente pelo nome informado da atividade, sem categorias. */
+ /* Agrupa nomes que se referem à mesma atividade, mesmo quando escritos de formas diferentes. */
+ const taskWords=new Set(["de","da","do","das","dos","a","o","as","os","e","para","por","em","no","na","meu","minha","fazer","fazendo","feito","realizar","realizando","atividade","tarefas","tarefa","lavar","lavando","limpar","limpando","arrumar","arrumando"]);
+ const canonicalTaskName=(raw)=>{
+  let words=String(raw||"").toLocaleLowerCase("pt-BR").normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9\s]/g," ").split(/\s+/).filter(Boolean);
+  words=words.map(w=>({"louca":"pratos","loucas":"pratos","prato":"pratos","utensilio":"pratos","utensilios":"pratos","vasilha":"pratos","vasilhas":"pratos","copo":"copos","copos":"copos","roupa":"roupas","roupas":"roupas"}[w]||w)).filter(w=>!taskWords.has(w));
+  return [...new Set(words)].sort();
+ };
  const groups={};
  entries.forEach(item=>{
   const name=String(item.activity||"").trim()||"Sem nome";
-  if(!groups[name])groups[name]={name,seconds:0,count:0,planned:0,plannedAll:true};
-  const group=groups[name];
+  const tokens=canonicalTaskName(name);
+  let groupKey=name;
+  for(const existingKey of Object.keys(groups)){
+   const other=groups[existingKey].tokens;
+   if(tokens.length&&other.length){
+    const common=tokens.filter(w=>other.includes(w)).length;
+    const similarity=common/Math.max(tokens.length,other.length);
+    if(similarity>=.72||tokens.every(w=>other.includes(w))||other.every(w=>tokens.includes(w))){groupKey=existingKey;break;}
+   }
+  }
+  if(!groups[groupKey])groups[groupKey]={name,tokens,seconds:0,count:0,planned:0,plannedAll:true};
+  const group=groups[groupKey];
   group.seconds+=entrySeconds(item);group.count++;
   if(Number(item.plannedSeconds)>0)group.planned+=Number(item.plannedSeconds);else group.plannedAll=false;
  });
@@ -1167,6 +1183,7 @@ function renderTimeDashboard(){
    track.setAttribute("role","img");
    track.setAttribute("aria-label",group.name+": "+formatTotal(group.seconds)+", "+percentage.toFixed(1).replace(".",",")+"% do tempo");
    const fill=document.createElement("div");fill.className="activity-fill";
+   fill.style.backgroundColor="#e76f51,#43a875,#4895d1,#9b72cf,#e2ad42,#d76ca1,#39a6a0,#89b94d,#597fd0,#d18c45,#c35d69,#5ba5bc"[index%12];
    fill.style.width=Math.max(0,Math.min(100,(group.seconds/maxSeconds)*100))+"%";
    track.appendChild(fill);
    const meta=document.createElement("div");meta.className="activity-meta";
