@@ -820,6 +820,28 @@ body.theme-light .time-reward-bar .theme-toggle{background:#eef0f2!important;col
 /* Diálogos nativos do LYUBI respeitam os dois temas */
 body.theme-light .lyubi-native-dialog>div{--lyubi-dialog-bg:#fff;--lyubi-dialog-text:#34363a;--lyubi-input-bg:#f3f4f6}
 body:not(.theme-light) .lyubi-native-dialog>div{--lyubi-dialog-bg:#202631;--lyubi-dialog-text:#fff;--lyubi-input-bg:#303740}
+
+/* Entrada compacta: tarefa + microfone + duração na mesma linha */
+#plannerPage .planner-form{grid-template-columns:minmax(0,1fr) 46px 76px!important;gap:8px!important;padding:10px!important}
+#plannerPage .planner-form .planner-name{order:0!important;grid-column:1!important;min-width:0!important}
+#plannerPage .planner-form .planner-name .field-label{display:none!important}
+#plannerPage .planner-form .planner-name input{height:46px!important;min-height:46px!important;padding:0 12px!important;font-size:14px!important;box-sizing:border-box!important}
+#plannerPage .planner-form .voice-area.voice-compact{order:1!important;grid-column:2!important;grid-row:1!important;width:46px!important;height:46px!important;min-width:46px!important;padding:0!important;margin:0!important;display:flex!important;align-items:center!important;justify-content:center!important;background:transparent!important;border:0!important;box-shadow:none!important}
+#plannerPage .planner-form .voice-area.voice-compact #voiceButton{width:46px!important;min-width:46px!important;height:46px!important;min-height:46px!important;padding:10px!important;margin:0!important;display:flex!important;align-items:center!important;justify-content:center!important;border-radius:13px!important;background:#e8c477!important;color:#34363a!important;border:0!important;box-shadow:none!important}
+#plannerPage .planner-form .voice-area.voice-compact #voiceButton svg{width:24px!important;height:24px!important;display:block!important}
+#plannerPage .planner-form .voice-area.voice-compact #voiceButton:disabled{opacity:.65!important}
+#plannerPage .planner-form .voice-area.voice-compact #voiceStatus{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
+#plannerPage .planner-form .field:has(#taskMinutes){order:2!important;grid-column:3!important;grid-row:1!important;min-width:0!important}
+#plannerPage .planner-form .field:has(#taskMinutes) .field-label{display:none!important}
+#plannerPage .planner-form .field:has(#taskMinutes) input{height:46px!important;min-height:46px!important;padding:0 7px!important;text-align:center!important;box-sizing:border-box!important}
+#plannerPage .planner-form button.planner-add{order:3!important;grid-column:1/-1!important;grid-row:2!important;min-height:42px!important;padding:9px 12px!important;margin:0!important;font-size:14px!important}
+body.theme-light #plannerPage .planner-form .voice-area.voice-compact #voiceButton{background:#e8c477!important;color:#34363a!important}
+@media(max-width:380px){
+ #plannerPage .planner-form{grid-template-columns:minmax(0,1fr) 42px 66px!important;gap:6px!important}
+ #plannerPage .planner-form .voice-area.voice-compact,#plannerPage .planner-form .voice-area.voice-compact #voiceButton{width:42px!important;min-width:42px!important;height:44px!important;min-height:44px!important}
+ #plannerPage .planner-form .planner-name input,#plannerPage .planner-form .field:has(#taskMinutes) input{height:44px!important;min-height:44px!important;font-size:13px!important}
+}
+
 </style>
 </head>
 <body>
@@ -990,9 +1012,9 @@ body:not(.theme-light) .lyubi-native-dialog>div{--lyubi-dialog-bg:#202631;--lyub
      <input id="taskName" placeholder="O que você vai fazer?" autocomplete="off">
     </div>
 
-    <div class="voice-area">
-     <button type="button" class="secondary" id="voiceButton" onclick="startVoiceCapture()">🎙️ Falar uma tarefa</button>
-     <p id="voiceStatus" class="voice-status" aria-live="polite">Ex.: Estudar por 40 minutos</p>
+    <div class="voice-area voice-compact">
+     <button type="button" class="secondary" id="voiceButton" onclick="startVoiceCapture()" aria-label="Falar tarefa" title="Falar tarefa"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="2.5" width="6" height="12" rx="3" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3.5M8.5 21.5h7" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg></button>
+     <p id="voiceStatus" class="voice-status" aria-live="polite">Toque no microfone e fale sua tarefa.</p>
     </div>
 
     <div class="field">
