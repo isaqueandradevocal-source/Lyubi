@@ -556,6 +556,20 @@ main{padding-top:10px!important}
 .activity-row:nth-child(8) .activity-fill{background:hsl(95,50%,45%)}
 .activity-row:nth-child(n+9) .activity-fill{background:hsl(calc((var(--activity-index,0)*61)%360),60%,50%)}
 
+
+/* Ferramentas em accordions verticais: Calendário e pausas */
+.planner-accordion{margin-top:8px;padding:12px 15px!important;background:#fff;border-radius:12px}
+.planner-accordion>summary{list-style:none;display:flex;align-items:center;justify-content:space-between;cursor:pointer;font-weight:700;color:#424448;padding:4px 1px}
+.planner-accordion>summary::-webkit-details-marker{display:none}
+.planner-accordion>summary:after{content:"＋";font-size:19px;color:#7a7c80;font-weight:400}
+.planner-accordion[open]>summary:after{content:"−"}
+.planner-accordion[open]>summary{margin-bottom:10px}
+.planner-accordion-content{padding-top:2px}
+.planner-accordion-content .settings{display:flex!important;gap:8px;flex-wrap:wrap}
+.planner-accordion-content .settings label{flex:1;min-width:78px;font-size:11px}
+.planner-accordion-content .settings input{width:100%;max-width:none;height:36px;padding:5px}
+.planner-accordion-content .note{font-size:11px;line-height:1.45;margin:8px 0}
+
 </style>
 </head>
 <body>
@@ -740,13 +754,9 @@ main{padding-top:10px!important}
    </div>
   </section>
 
-  <details class="panel planner-details">
-   <div class="planner-tools-tabs"><button type="button" class="planner-tools-tab active" onclick="showPlannerTools('pausas')">Pausas</button><button type="button" class="planner-tools-tab" onclick="showPlannerTools('salvas')">Programações salvas e calendário</button></div>
-   <div class="planner-tools-pane" id="plannerToolsPauses"><div class="settings" style="display:none">
-    <label>Pausa curta (min)<br><input id="shortBreak" type="number" min="0" value="2"></label>
-    <label>Pausa longa (min)<br><input id="longBreak" type="number" min="0" value="5"></label>
-    <label>Limite (min)<br><input id="breakLimit" type="number" min="1" value="15"></label>
-   </div><p class="note">A recompensa é liberada somente ao concluir uma tarefa: até 15 min = 1 min; acima de 15 até 25 min = 4 min; acima de 25 min = 6 min. Você escolhe aproveitar a pausa agora ou guardar o tempo nas ampulhetas.</p></div><div class="planner-tools-pane" id="plannerToolsSaved" hidden><p class="note">Salve listas para reutilizar em outros dias.</p>
+  <details class="panel planner-details planner-accordion">
+   <summary>Calendário</summary>
+   <div class="planner-accordion-content"><p class="note">Salve listas para reutilizar em outros dias.</p>
 
    <div class="field">
     <label class="field-label" for="scheduleName">Nome da programação</label>
@@ -818,12 +828,19 @@ main{padding-top:10px!important}
      </div>
     </div>
     <p class="note">Você pode escolher um modelo salvo ou criar uma programação nova diretamente para a data selecionada. A criação direta não altera seus modelos salvos.</p>
-   </section>
-  
-    
-
-   <p class="note">A recompensa é liberada somente ao concluir uma tarefa: até 15 min = 1 min; acima de 15 até 25 min = 4 min; acima de 25 min = 6 min. Você escolhe aproveitar a pausa agora ou guardar o tempo nas ampulhetas.</p>
-  </div></details>
+   </section></div>
+  </details>
+  <details class="panel planner-details planner-accordion">
+   <summary>Configurações de pausas</summary>
+   <div class="planner-accordion-content">
+    <div class="settings">
+     <label>Pausa curta (min)<br><input id="shortBreak" type="number" min="0" value="2"></label>
+     <label>Pausa longa (min)<br><input id="longBreak" type="number" min="0" value="5"></label>
+     <label>Limite (min)<br><input id="breakLimit" type="number" min="1" value="15"></label>
+    </div>
+    <p class="note">A recompensa é liberada somente ao concluir uma tarefa: até 15 min = 1 min; acima de 15 até 25 min = 4 min; acima de 25 min = 6 min. Você escolhe aproveitar a pausa agora ou guardar o tempo nas ampulhetas.</p>
+   </div>
+  </details>
 
   <div class="planner-bottom-actions">
    <button onclick="startProgram()" id="startButton">▶ Começar programação</button>
